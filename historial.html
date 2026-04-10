@@ -4,38 +4,52 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="Historial de pagos del sistema de prestamos">
   <title>Historial - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-  <header class="header-brand">
+  <header class="header-brand" role="banner">
     <div class="brand">
       <h2>Historial de Pagos</h2>
       <p class="brand-sub">Registro de todos los pagos</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'" aria-label="Volver al inicio">
+        Volver
+      </button>
     </div>
   </header>
 
-  <div class="stats-resumen">
+  <div class="error-banner" id="errorBanner" role="alert" aria-live="assertive" hidden>
+    <span id="errorMensaje">Error al cargar pagos</span>
+    <button onclick="cargarDatos()">Reintentar</button>
+  </div>
+
+  <div class="stats-resumen" role="status" aria-live="polite" aria-label="Resumen de pagos">
     <span>Pagos: <strong id="totalPagosCount">0</strong></span>
     <span>Total: <strong id="totalMontoPagos">$0.00</strong></span>
   </div>
 
-  <div class="filtros">
-    <select id="filtroCliente">
+  <div class="filtros" role="group" aria-label="Filtros de historial">
+    <label for="filtroCliente" class="sr-only">Filtrar por cliente</label>
+    <select id="filtroCliente" aria-label="Seleccionar cliente">
       <option value="todos">Todos los clientes</option>
     </select>
-    <input type="date" id="fechaInicio">
-    <input type="date" id="fechaFin">
-    <button class="btn-sm" onclick="renderTablaPagos()">Filtrar</button>
+    <label for="fechaInicio" class="sr-only">Fecha inicio</label>
+    <input type="date" id="fechaInicio" aria-label="Fecha de inicio">
+    <label for="fechaFin" class="sr-only">Fecha fin</label>
+    <input type="date" id="fechaFin" aria-label="Fecha de fin">
+    <button class="btn-sm" onclick="renderTablaPagos()" aria-label="Aplicar filtros">
+      Filtrar
+    </button>
   </div>
 
-  <div id="contenedorTabla" class="table-shell">
-    <table>
+  <!-- Skeleton -->
+  <div class="table-shell" id="skeletonTabla" aria-hidden="false" aria-busy="true">
+    <table aria-label="Cargando pagos">
       <thead>
         <tr>
           <th>Fecha</th>
@@ -43,32 +57,65 @@
           <th>Monto</th>
         </tr>
       </thead>
-      <tbody id="tablaPagos"></tbody>
+      <tbody>
+        <tr><td colspan="3" style="padding:0;border:none;">
+          <div class="skeleton-table-row"><div class="skeleton" style="width:80px;height:14px;"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:70px;height:14px;"></div></div>
+          <div class="skeleton-table-row"><div class="skeleton" style="width:80px;height:14px;"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:70px;height:14px;"></div></div>
+        </td></tr>
+      </tbody>
     </table>
   </div>
 
-  <nav class="nav-bottom">
-    <button onclick="location.href='index.html'">
-      <span class="nav-icon">&#9632;</span>
+  <!-- Tabla real -->
+  <div class="table-shell" id="tablaReal" style="display:none" aria-busy="false">
+    <table role="table" aria-label="Historial de pagos">
+      <thead>
+        <tr>
+          <th scope="col">Fecha</th>
+          <th scope="col">Cliente</th>
+          <th scope="col">Monto</th>
+        </tr>
+      </thead>
+      <tbody id="tablaPagos" aria-live="polite"></tbody>
+    </table>
+  </div>
+
+  <nav class="nav-bottom" role="navigation" aria-label="Navegacion principal">
+    <button onclick="location.href='index.html'" aria-label="Inicio">
+      <span class="nav-icon" aria-hidden="true">&#9632;</span>
       Inicio
     </button>
-    <button onclick="location.href='registro.html'">
-      <span class="nav-icon">+</span>
+    <button onclick="location.href='registro.html'" aria-label="Nuevo prestamo">
+      <span class="nav-icon" aria-hidden="true">+</span>
       Nuevo
     </button>
-    <button onclick="location.href='clientes.html'">
-      <span class="nav-icon">&#9744;</span>
+    <button onclick="location.href='clientes.html'" aria-label="Clientes">
+      <span class="nav-icon" aria-hidden="true">&#9744;</span>
       Clientes
     </button>
-    <button class="active" onclick="location.href='historial.html'">
-      <span class="nav-icon">&#9745;</span>
+    <button class="active" onclick="location.href='historial.html'" aria-current="page" aria-label="Historial de pagos">
+      <span class="nav-icon" aria-hidden="true">&#9745;</span>
       Pagos
     </button>
-    <button onclick="location.href='reportes.html'">
-      <span class="nav-icon">&#9633;</span>
+    <button onclick="location.href='reportes.html'" aria-label="Reportes">
+      <span class="nav-icon" aria-hidden="true">&#9633;</span>
       Reportes
     </button>
   </nav>
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
 
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
@@ -76,20 +123,73 @@
   <script>
     let clientes = [];
     let pagos = [];
+    let estaCargando = false;
 
-    window.addEventListener("load", async () => {
-      clientes = await obtenerClientes();
-      pagos = await obtenerPagos();
+    window.addEventListener("load", () => cargarDatos());
 
-      poblarSelectClientes();
-      establecerFechasDefault();
-      renderTablaPagos();
-    });
+    async function cargarDatos() {
+      if (estaCargando) return;
+      estaCargando = true;
+
+      mostrarSkeleton(true);
+      ocultarError();
+
+      try {
+        const [c, pg] = await Promise.all([
+          obtenerClientes(),
+          obtenerPagos()
+        ]);
+
+        if (c === null || pg === null) throw new Error("No se pudieron obtener los datos");
+
+        clientes = c;
+        pagos = pg;
+
+        poblarSelectClientes();
+        establecerFechasDefault();
+        renderTablaPagos();
+        mostrarSkeleton(false);
+      } catch (err) {
+        console.error("[ERROR] cargarDatos:", err);
+        mostrarSkeleton(false);
+        mostrarError("Error al cargar pagos. Verifica tu conexion.");
+      } finally {
+        estaCargando = false;
+      }
+    }
+
+    function mostrarSkeleton(mostrar) {
+      const sk = document.getElementById("skeletonTabla");
+      const real = document.getElementById("tablaReal");
+      if (mostrar) {
+        sk.style.display = "block";
+        sk.setAttribute("aria-hidden", "false");
+        sk.setAttribute("aria-busy", "true");
+        real.style.display = "none";
+        real.setAttribute("aria-hidden", "true");
+      } else {
+        sk.style.display = "none";
+        sk.setAttribute("aria-hidden", "true");
+        real.style.display = "block";
+        real.setAttribute("aria-hidden", "false");
+        real.setAttribute("aria-busy", "false");
+      }
+    }
+
+    function mostrarError(mensaje) {
+      const b = document.getElementById("errorBanner");
+      document.getElementById("errorMensaje").textContent = mensaje;
+      b.hidden = false;
+    }
+
+    function ocultarError() {
+      document.getElementById("errorBanner").hidden = true;
+    }
 
     function poblarSelectClientes() {
       const select = document.getElementById("filtroCliente");
-      select.innerHTML = '<option value="todos">Todos</option>' +
-        clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+      select.innerHTML = '<option value="todos">Todos los clientes</option>' +
+        clientes.map(c => `<option value="${c.id}">${c.nombre || "Sin nombre"}</option>`).join("");
     }
 
     function establecerFechasDefault() {
@@ -113,25 +213,31 @@
 
       filtered.sort((a, b) => new Date(b.fecha_pago) - new Date(a.fecha_pago));
 
+      const totalMonto = filtered.reduce((sum, p) => sum + (p.monto || 0), 0);
       document.getElementById("totalPagosCount").textContent = filtered.length;
-      document.getElementById("totalMontoPagos").textContent = `$${formatearMoneda(
-        filtered.reduce((sum, p) => sum + (p.monto || 0), 0)
-      )}`;
+      document.getElementById("totalMontoPagos").textContent = `$${formatearMoneda(totalMonto)}`;
 
       if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="3" class="text-center">Sin pagos registrados</td></tr>';
+        tbody.innerHTML = `
+          <tr><td colspan="3">
+            <div class="empty-state">
+              <div class="empty-state-icono" aria-hidden="true">&#128179;</div>
+              <div class="empty-state-titulo">Sin pagos registrados</div>
+              <div class="empty-state-texto">No hay pagos en el periodo seleccionado.</div>
+            </div>
+          </td></tr>`;
         return;
       }
 
       tbody.innerHTML = filtered.map(p => {
         const cliente = clientes.find(c => c.id === p.cliente_id);
+        const nombre = cliente?.nombre || "N/A";
         return `
-          <tr onclick="verDetallePago('${p.id}')">
+          <tr tabindex="0" onclick="verDetallePago('${p.id}')" aria-label="Pago de ${nombre} - $${formatearMoneda(p.monto)}">
             <td data-label="Fecha">${p.fecha_pago}</td>
-            <td data-label="Cliente"><strong>${cliente?.nombre || "N/A"}</strong></td>
+            <td data-label="Cliente"><strong title="${nombre}">${nombre}</strong></td>
             <td data-label="Monto"><strong>$${formatearMoneda(p.monto)}</strong></td>
-          </tr>
-        `;
+          </tr>`;
       }).join("");
     }
 

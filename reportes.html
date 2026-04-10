@@ -4,73 +4,124 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="Reportes y estadisticas del sistema de prestamos">
   <title>Reportes - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-  <header class="header-brand">
+  <header class="header-brand" role="banner">
     <div class="brand">
       <h2>Reportes</h2>
       <p class="brand-sub">Estadisticas y exportaciones</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'" aria-label="Volver al inicio">
+        Volver
+      </button>
     </div>
   </header>
 
-  <main class="reportes-container">
+  <div class="error-banner" id="errorBanner" role="alert" aria-live="assertive" hidden>
+    <span id="errorMensaje">Error al cargar datos</span>
+    <button onclick="cargarDatos()">Reintentar</button>
+  </div>
+
+  <!-- Skeleton -->
+  <div class="reportes-container" id="skeletonReportes" aria-busy="true" aria-label="Cargando reportes">
+    <div class="reporte-card" aria-hidden="true">
+      <div class="skeleton" style="height:16px;width:40%;margin-bottom:14px;"></div>
+      <div class="skeleton" style="height:12px;width:80%;margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:12px;width:70%;margin-bottom:8px;"></div>
+      <div class="skeleton" style="height:12px;width:60%;"></div>
+    </div>
+    <div class="reporte-card" aria-hidden="true">
+      <div class="skeleton" style="height:16px;width:40%;margin-bottom:14px;"></div>
+      <div class="skeleton" style="height:60px;width:100%;border-radius:8px;"></div>
+    </div>
+    <div class="reporte-card" aria-hidden="true">
+      <div class="skeleton" style="height:16px;width:40%;margin-bottom:14px;"></div>
+      <div class="skeleton" style="height:40px;width:100%;margin-bottom:14px;border-radius:8px;"></div>
+      <div class="skeleton" style="height:12px;width:80%;"></div>
+    </div>
+  </div>
+
+  <!-- Contenido real -->
+  <main class="reportes-container" id="reportesReal" style="display:none" aria-busy="false">
     <article class="reporte-card">
-      <h3>Resumen General</h3>
-      <div id="resumenGeneral"></div>
-      <button class="btn-primary" onclick="descargarResumenGeneral()">Descargar CSV</button>
+      <h3 id="tituloResumen">Resumen General</h3>
+      <div id="resumenGeneral" aria-live="polite" aria-labelledby="tituloResumen"></div>
+      <button class="btn-primary" onclick="descargarResumenGeneral()" aria-label="Descargar resumen general en CSV">
+        Descargar CSV
+      </button>
     </article>
 
     <article class="reporte-card">
-      <h3>Prestamos Atrasados</h3>
-      <div id="prestamosAtrasados"></div>
-      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">Descargar Lista</button>
+      <h3 id="tituloAtrasados">Prestamos Atrasados</h3>
+      <div id="prestamosAtrasados" aria-live="polite" aria-labelledby="tituloAtrasados"></div>
+      <button class="btn-primary" onclick="descargarPrestamosAtrasados()" aria-label="Descargar lista de atrasados">
+        Descargar Lista
+      </button>
     </article>
 
     <article class="reporte-card">
-      <h3>Estado de Cuenta</h3>
-      <select id="clienteReporte">
+      <h3 id="tituloEstado">Estado de Cuenta</h3>
+      <label for="clienteReporte" class="sr-only">Seleccionar cliente</label>
+      <select id="clienteReporte" aria-labelledby="tituloEstado" aria-label="Seleccionar cliente para estado de cuenta">
         <option value="todos">Todos los clientes</option>
       </select>
-      <div id="estadoCuentaCliente"></div>
-      <button class="btn-primary" onclick="descargarEstadoCuenta()">Descargar</button>
+      <div id="estadoCuentaCliente" aria-live="polite"></div>
+      <button class="btn-primary" onclick="descargarEstadoCuenta()" aria-label="Descargar estado de cuenta">
+        Descargar
+      </button>
     </article>
 
     <article class="reporte-card">
-      <h3>Flujo de Efectivo</h3>
-      <div id="flujoEfectivo"></div>
-      <button class="btn-primary" onclick="descargarFlujoEfectivo()">Descargar CSV</button>
+      <h3 id="tituloFlujo">Flujo de Efectivo</h3>
+      <div id="flujoEfectivo" aria-live="polite" aria-labelledby="tituloFlujo"></div>
+      <button class="btn-primary" onclick="descargarFlujoEfectivo()" aria-label="Descargar flujo de efectivo en CSV">
+        Descargar CSV
+      </button>
     </article>
   </main>
 
-  <nav class="nav-bottom">
-    <button onclick="location.href='index.html'">
-      <span class="nav-icon">&#9632;</span>
+  <nav class="nav-bottom" role="navigation" aria-label="Navegacion principal">
+    <button onclick="location.href='index.html'" aria-label="Inicio">
+      <span class="nav-icon" aria-hidden="true">&#9632;</span>
       Inicio
     </button>
-    <button onclick="location.href='registro.html'">
-      <span class="nav-icon">+</span>
+    <button onclick="location.href='registro.html'" aria-label="Nuevo prestamo">
+      <span class="nav-icon" aria-hidden="true">+</span>
       Nuevo
     </button>
-    <button onclick="location.href='clientes.html'">
-      <span class="nav-icon">&#9744;</span>
+    <button onclick="location.href='clientes.html'" aria-label="Clientes">
+      <span class="nav-icon" aria-hidden="true">&#9744;</span>
       Clientes
     </button>
-    <button onclick="location.href='historial.html'">
-      <span class="nav-icon">&#9745;</span>
+    <button onclick="location.href='historial.html'" aria-label="Historial de pagos">
+      <span class="nav-icon" aria-hidden="true">&#9745;</span>
       Pagos
     </button>
-    <button class="active" onclick="location.href='reportes.html'">
-      <span class="nav-icon">&#9633;</span>
+    <button class="active" onclick="location.href='reportes.html'" aria-current="page" aria-label="Reportes">
+      <span class="nav-icon" aria-hidden="true">&#9633;</span>
       Reportes
     </button>
   </nav>
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
 
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
@@ -80,28 +131,82 @@
     let clientes = [];
     let prestamos = [];
     let pagos = [];
+    let estaCargando = false;
 
-    window.addEventListener("load", async () => {
-      clientes = await obtenerClientes();
-      prestamos = await obtenerPrestamos();
-      pagos = await obtenerPagos();
+    window.addEventListener("load", () => cargarDatos());
 
-      poblarSelectClientesReporte();
-      renderResumenGeneral();
-      renderPrestamosAtrasados();
-      renderEstadoCuentaCliente();
-      renderFlujoEfectivo();
-    });
+    async function cargarDatos() {
+      if (estaCargando) return;
+      estaCargando = true;
+
+      mostrarSkeleton(true);
+      ocultarError();
+
+      try {
+        const [c, p, pg] = await Promise.all([
+          obtenerClientes(),
+          obtenerPrestamos(),
+          obtenerPagos()
+        ]);
+
+        if (c === null || p === null || pg === null) {
+          throw new Error("No se pudieron obtener los datos");
+        }
+
+        clientes = c;
+        prestamos = p;
+        pagos = pg;
+
+        poblarSelectClientesReporte();
+        renderResumenGeneral();
+        renderPrestamosAtrasados();
+        renderEstadoCuentaCliente();
+        renderFlujoEfectivo();
+        mostrarSkeleton(false);
+      } catch (err) {
+        console.error("[ERROR] cargarDatos:", err);
+        mostrarSkeleton(false);
+        mostrarError("Error al cargar reportes. Verifica tu conexion.");
+      } finally {
+        estaCargando = false;
+      }
+    }
+
+    function mostrarSkeleton(mostrar) {
+      const sk = document.getElementById("skeletonReportes");
+      const real = document.getElementById("reportesReal");
+      if (mostrar) {
+        sk.style.display = "flex";
+        sk.setAttribute("aria-busy", "true");
+        real.style.display = "none";
+        real.setAttribute("aria-busy", "true");
+      } else {
+        sk.style.display = "none";
+        sk.setAttribute("aria-busy", "false");
+        real.style.display = "flex";
+        real.setAttribute("aria-busy", "false");
+      }
+    }
+
+    function mostrarError(mensaje) {
+      const b = document.getElementById("errorBanner");
+      document.getElementById("errorMensaje").textContent = mensaje;
+      b.hidden = false;
+    }
+
+    function ocultarError() {
+      document.getElementById("errorBanner").hidden = true;
+    }
 
     function poblarSelectClientesReporte() {
       const select = document.getElementById("clienteReporte");
       select.innerHTML = '<option value="todos">Todos</option>' +
-        clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+        clientes.map(c => `<option value="${c.id}">${c.nombre || "Sin nombre"}</option>`).join("");
       select.addEventListener("change", renderEstadoCuentaCliente);
     }
 
     function renderResumenGeneral() {
-      const activos = prestamos.filter(p => p.estado === "activo");
+      const activos = prestamos.filter(p => p.estado !== "pagado");
       const pagados = prestamos.filter(p => p.estado === "pagado");
       const hoy = new Date().toISOString().split("T")[0];
       const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
@@ -134,20 +239,19 @@
         ? atrasados.map(p => {
             const cliente = clientes.find(c => c.id === p.cliente_id);
             const dias = diasAtraso(p.fecha_proximo_pago);
+            const nombre = cliente?.nombre || "N/A";
             return `
               <div class="prestamo-atrasado">
-                <strong>${cliente?.nombre || "N/A"}</strong>
+                <strong title="${nombre}">${nombre}</strong>
                 <span>Dias: <strong class="text-danger">${dias}</strong></span>
                 <span>Saldo: <strong>$${formatearMoneda(p.saldo_pendiente)}</strong></span>
-              </div>
-            `;
+              </div>`;
           }).join("")
         : "<p class='text-success'>Sin prestamos atrasados</p>";
     }
 
     function renderEstadoCuentaCliente() {
       const clienteId = document.getElementById("clienteReporte").value;
-
       let filtered = [];
 
       if (clienteId === "todos") {
@@ -178,7 +282,7 @@
       document.getElementById("estadoCuentaCliente").innerHTML = filtered.length
         ? filtered.map(r => `
             <div class="cliente-resumen">
-              <strong>${r.cliente.nombre}</strong>
+              <strong title="${r.cliente.nombre || "Sin nombre"}">${r.cliente.nombre || "Sin nombre"}</strong>
               <div class="stat-row"><span>Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
               <div class="stat-row"><span>Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
               <div class="stat-row"><span>Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>

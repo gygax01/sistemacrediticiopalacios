@@ -2,60 +2,116 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="Sistema de gestion de prestamos y cobros">
   <title>Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-
 <body>
-  <header class="header-brand">
-    <div class="brand">
-      <h2>Sistema de Prestamos</h2>
-      <p class="brand-sub">Beta v1.0</p>
-    </div>
-    <div class="header-actions">
-      <span id="totalAdeudo" class="stat-pill is-red">$0.00</span>
-      <span id="estadoConexion" class="lector off">Offline</span>
+  <!-- Header -->
+  <header role="banner">
+    <div class="header-container">
+      <div class="header-left">
+        <h1>Sistema de Prestamos</h1>
+        <span class="badge-beta" role="status" aria-label="Modo beta activo">Beta</span>
+      </div>
+      <div class="header-right">
+        <span class="total-adeudo" aria-live="polite">$0.00</span>
+        <span class="status online" id="statusConexion" role="status" aria-label="Estado de conexion">
+          Online
+        </span>
+      </div>
     </div>
   </header>
 
-  <div class="beta-banner">
-    <span>Modo Beta</span>
-    <button class="btn-eliminar-datos" onclick="confirmarEliminarDatos()">Eliminar datos de prueba</button>
+  <!-- Banner Beta -->
+  <div class="beta-bar" role="complementary" aria-label="Modo de prueba">
+    <span>Modo Prueba</span>
+    <button
+      onclick="abrirModalEliminar()"
+      aria-label="Eliminar todos los datos de prueba"
+      title="Borrar clientes, prestamos y pagos"
+    >
+      Limpiar datos
+    </button>
   </div>
 
-  <section class="dashboard-grid">
-    <article class="stat-card is-orange">
-      <h3>Activos</h3>
-      <p id="dashPrestamosActivos">0</p>
-    </article>
-    <article class="stat-card is-green">
-      <h3>Clientes</h3>
-      <p id="dashClientes">0</p>
-    </article>
-    <article class="stat-card">
-      <h3>Pagos Mes</h3>
-      <p id="dashPagosMes">0</p>
-    </article>
-    <article class="stat-card is-red">
-      <h3>Atrasados</h3>
-      <p id="dashAtrasados">0</p>
-    </article>
-  </section>
-
-  <div class="panel-acciones">
-    <button class="destacado" onclick="location.href='registro.html'">+ Nuevo Prestamo</button>
-    <button onclick="location.href='registro.html#nuevo-cliente'">+ Nuevo Cliente</button>
-    <button onclick="location.href='clientes.html'">Clientes</button>
-    <button onclick="location.href='historial.html'">Historial</button>
-    <button onclick="location.href='reportes.html'">Reportes</button>
+  <!-- Error Banner (oculto por defecto) -->
+  <div class="error-banner" id="errorBanner" role="alert" aria-live="assertive" hidden>
+    <span id="errorMensaje">Error al cargar datos</span>
+    <button onclick="reintentarCarga()">Reintentar</button>
   </div>
 
-  <div class="filtros">
-    <input type="text" id="buscador" placeholder="Buscar cliente...">
-    <select id="filtroEstado">
+  <!-- Dashboard - Skeleton -->
+  <div class="stats-container" id="statsContainer" aria-busy="true" aria-label="Estadisticas del sistema">
+    <div class="skeleton-stat" aria-hidden="true">
+      <div class="skeleton skeleton-label"></div>
+      <div class="skeleton skeleton-value"></div>
+    </div>
+    <div class="skeleton-stat" aria-hidden="true">
+      <div class="skeleton skeleton-label"></div>
+      <div class="skeleton skeleton-value"></div>
+    </div>
+    <div class="skeleton-stat" aria-hidden="true">
+      <div class="skeleton skeleton-label"></div>
+      <div class="skeleton skeleton-value"></div>
+    </div>
+    <div class="skeleton-stat" aria-hidden="true">
+      <div class="skeleton skeleton-label"></div>
+      <div class="skeleton skeleton-value"></div>
+    </div>
+  </div>
+
+  <!-- Dashboard - Real (oculto hasta cargar) -->
+  <div class="stats-container" id="statsReal" style="display:none" aria-busy="false">
+    <div class="stat-box">
+      <span class="stat-label">Activos</span>
+      <span class="stat-value" id="dashPrestamosActivos" aria-live="polite">0</span>
+    </div>
+    <div class="stat-box green">
+      <span class="stat-label">Clientes</span>
+      <span class="stat-value" id="dashClientes" aria-live="polite">0</span>
+    </div>
+    <div class="stat-box orange">
+      <span class="stat-label">Pagos Mes</span>
+      <span class="stat-value" id="dashPagosMes" aria-live="polite">0</span>
+    </div>
+    <div class="stat-box red">
+      <span class="stat-label">Atrasados</span>
+      <span class="stat-value" id="dashAtrasados" aria-live="polite">0</span>
+    </div>
+  </div>
+
+  <!-- Acciones -->
+  <div class="actions-bar" role="group" aria-label="Acciones principales">
+    <button class="btn-primary" onclick="location.href='registro.html'" aria-label="Crear nuevo prestamo">
+      + Nuevo Prestamo
+    </button>
+    <button class="btn-secondary" onclick="location.href='registro.html#nuevo-cliente'" aria-label="Registrar nuevo cliente">
+      + Cliente
+    </button>
+    <button class="btn-secondary" onclick="location.href='clientes.html'" aria-label="Ver lista de clientes">
+      Clientes
+    </button>
+    <button class="btn-secondary" onclick="location.href='historial.html'" aria-label="Ver historial de pagos">
+      Historial
+    </button>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-bar" role="search">
+    <label for="buscador" class="sr-only">Buscar cliente por nombre o matricula</label>
+    <input
+      type="search"
+      id="buscador"
+      placeholder="Buscar..."
+      aria-label="Buscar cliente por nombre o matricula"
+      autocomplete="off"
+    >
+    <label for="filtroEstado" class="sr-only">Filtrar por estado</label>
+    <select id="filtroEstado" aria-label="Filtrar prestamos por estado">
       <option value="todos">Todos</option>
       <option value="activo">Activos</option>
       <option value="pagado">Pagados</option>
@@ -63,193 +119,351 @@
     </select>
   </div>
 
-  <div id="contenedorTabla" class="table-shell">
-    <table>
+  <!-- Tabla skeleton -->
+  <div class="table-container" id="tablaSkeleton" aria-hidden="true">
+    <table aria-label="Cargando prestamos">
       <thead>
         <tr>
           <th>Cliente</th>
           <th>Saldo</th>
           <th>Pagos</th>
           <th>Estado</th>
-          <th>Accion</th>
+          <th></th>
         </tr>
       </thead>
-      <tbody id="tablaPrestamos"></tbody>
+      <tbody>
+        <tr><td colspan="5" style="padding:0;border:none;">
+          <div class="skeleton-table-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:60px;height:20px;"></div><div class="skeleton skeleton-badge"></div></div>
+          <div class="skeleton-table-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:60px;height:20px;"></div><div class="skeleton skeleton-badge"></div></div>
+          <div class="skeleton-table-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:60px;height:20px;"></div><div class="skeleton skeleton-badge"></div></div>
+        </td></tr>
+      </tbody>
     </table>
   </div>
 
-  <nav class="nav-bottom">
-    <button class="active" onclick="location.href='index.html'">
-      <span class="nav-icon">&#9632;</span>
+  <!-- Tabla real -->
+  <div class="table-container" id="tablaReal" style="display:none">
+    <table role="table" aria-label="Prestamos activos">
+      <thead>
+        <tr>
+          <th scope="col">Cliente</th>
+          <th scope="col">Saldo</th>
+          <th scope="col">Pagos</th>
+          <th scope="col">Estado</th>
+          <th scope="col"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody id="tablaPrestamos" aria-live="polite" aria-label="Lista de prestamos"></tbody>
+    </table>
+  </div>
+
+  <!-- Navegacion Movil -->
+  <nav class="mobile-nav" role="navigation" aria-label="Navegacion principal">
+    <a href="index.html" class="active" aria-current="page" aria-label="Inicio">
       Inicio
-    </button>
-    <button onclick="location.href='registro.html'">
-      <span class="nav-icon">+</span>
+    </a>
+    <a href="registro.html" aria-label="Nuevo prestamo">
       Nuevo
-    </button>
-    <button onclick="location.href='clientes.html'">
-      <span class="nav-icon">&#9744;</span>
+    </a>
+    <a href="clientes.html" aria-label="Ver clientes">
       Clientes
-    </button>
-    <button onclick="location.href='historial.html'">
-      <span class="nav-icon">&#9745;</span>
+    </a>
+    <a href="historial.html" aria-label="Ver historial de pagos">
       Pagos
-    </button>
-    <button onclick="location.href='reportes.html'">
-      <span class="nav-icon">&#9633;</span>
-      Reportes
-    </button>
+    </a>
   </nav>
 
-  <div class="modal-confirm" id="modalEliminar">
-    <div class="modal-confirm-content">
-      <h3>Eliminar todos los datos</h3>
-      <p>Esto eliminara todos los clientes, prestamos y pagos. Esta accion no se puede deshacer.</p>
-      <div class="modal-confirm-actions">
-        <button class="btn-cancelar" onclick="cerrarModalEliminar()">Cancelar</button>
-        <button class="btn-confirmar-eliminar" onclick="eliminarDatosPrueba()">Si, eliminar todo</button>
+  <!-- Modal Confirmacion Eliminar -->
+  <div
+    class="modal"
+    id="modalEliminar"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalTitulo"
+    aria-describedby="modalDescripcion"
+    aria-hidden="true"
+    tabindex="-1"
+  >
+    <div class="modal-content">
+      <div class="modal-icono" aria-hidden="true">!</div>
+      <h3 id="modalTitulo">Eliminar todos los datos?</h3>
+      <p id="modalDescripcion">
+        Se eliminaran todos los clientes, prestamos y pagos registrados.
+        Esta accion no se puede deshacer.
+      </p>
+      <div class="modal-aviso" role="alert">
+        Advertencia: los datos seran borrados permanentemente de Supabase.
+      </div>
+      <div class="modal-buttons">
+        <button class="btn-cancel" onclick="cerrarModalEliminar()" id="btnCancelarModal">
+          Cancelar
+        </button>
+        <button class="btn-delete" onclick="eliminarDatosPrueba()" id="btnConfirmarEliminar">
+          Eliminar todo
+        </button>
       </div>
     </div>
   </div>
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
 
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
 
   <script>
-    let clientes = [];
-    let prestamos = [];
-    let pagos = [];
+    let clientes = [], prestamos = [], pagos = [];
+    let estaCargando = false;
 
     window.addEventListener("load", async () => {
-      const estadoConexion = document.getElementById("estadoConexion");
-      actualizarEstadoConexion(estadoConexion);
-      window.addEventListener("online", () => actualizarEstadoConexion(estadoConexion));
-      window.addEventListener("offline", () => actualizarEstadoConexion(estadoConexion));
-
       await cargarDatos();
-      await actualizarDashboard();
-      renderTablaPrestamos();
       setupFiltros();
-
-      setInterval(async () => {
-        await cargarDatos();
-        await actualizarDashboard();
-        renderTablaPrestamos();
-      }, 15000);
+      setupRefresh();
     });
 
     async function cargarDatos() {
-      clientes = await obtenerClientes();
-      prestamos = await obtenerPrestamos();
-      pagos = await obtenerPagos();
-    }
+      if (estaCargando) return;
+      estaCargando = true;
 
-    function actualizarEstadoConexion(el) {
-      if (!el) return;
-      if (navigator.onLine) {
-        el.textContent = "Online";
-        el.className = "lector on";
-        return;
+      mostrarSkeleton(true);
+      ocultarError();
+
+      try {
+        const [c, p, pg] = await Promise.all([
+          obtenerClientes(),
+          obtenerPrestamos(),
+          obtenerPagos()
+        ]);
+
+        if (c === null || p === null || pg === null) {
+          throw new Error("No se pudieron obtener los datos");
+        }
+
+        clientes = c;
+        prestamos = p;
+        pagos = pg;
+
+        actualizarDashboard();
+        renderTablaPrestamos();
+        mostrarSkeleton(false);
+        marcarOnline();
+      } catch (err) {
+        console.error("[ERROR] cargarDatos:", err);
+        mostrarSkeleton(false);
+        mostrarError("Error al cargar datos. Verifica tu conexion.");
+        marcarOffline();
+      } finally {
+        estaCargando = false;
       }
-      el.textContent = "Offline";
-      el.className = "lector off";
     }
 
-    async function actualizarDashboard() {
+    function mostrarSkeleton(mostrar) {
+      const skeleton = document.getElementById("statsContainer");
+      const real = document.getElementById("statsReal");
+      const tablaSkeleton = document.getElementById("tablaSkeleton");
+      const tablaReal = document.getElementById("tablaReal");
+
+      if (mostrar) {
+        skeleton.style.display = "grid";
+        real.style.display = "none";
+        skeleton.setAttribute("aria-busy", "true");
+        tablaSkeleton.style.display = "block";
+        tablaReal.style.display = "none";
+        tablaSkeleton.setAttribute("aria-hidden", "false");
+        tablaReal.setAttribute("aria-hidden", "true");
+      } else {
+        skeleton.style.display = "none";
+        real.style.display = "grid";
+        real.setAttribute("aria-busy", "false");
+        tablaSkeleton.style.display = "none";
+        tablaReal.style.display = "block";
+        tablaSkeleton.setAttribute("aria-hidden", "true");
+        tablaReal.setAttribute("aria-hidden", "false");
+      }
+    }
+
+    function mostrarError(mensaje) {
+      const banner = document.getElementById("errorBanner");
+      const texto = document.getElementById("errorMensaje");
+      texto.textContent = mensaje;
+      banner.hidden = false;
+    }
+
+    function ocultarError() {
+      document.getElementById("errorBanner").hidden = true;
+    }
+
+    function reintentarCarga() {
+      cargarDatos();
+    }
+
+    function marcarOnline() {
+      const el = document.getElementById("statusConexion");
+      el.className = "status online";
+      el.textContent = "Online";
+    }
+
+    function marcarOffline() {
+      const el = document.getElementById("statusConexion");
+      el.className = "status offline";
+      el.textContent = "Offline";
+    }
+
+    function actualizarDashboard() {
       const activos = prestamos.filter(p => p.estado !== "pagado");
       const hoy = new Date().toISOString().split("T")[0];
       const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
-
       const mesActual = new Date().getMonth();
+      const anioActual = new Date().getFullYear();
       const pagosDelMes = pagos.filter(p => {
-        const fechaPago = new Date(p.fecha_pago);
-        return fechaPago.getMonth() === mesActual && p.estado === "confirmado";
+        const d = new Date(p.fecha_pago);
+        return d.getMonth() === mesActual && d.getFullYear() === anioActual && p.estado === "confirmado";
       });
-
-      const totalAdeudo = activos.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
+      const totalAdeudo = activos.reduce((s, p) => s + (p.saldo_pendiente || 0), 0);
 
       document.getElementById("dashPrestamosActivos").textContent = activos.length;
       document.getElementById("dashClientes").textContent = clientes.length;
       document.getElementById("dashPagosMes").textContent = pagosDelMes.length;
       document.getElementById("dashAtrasados").textContent = atrasados.length;
-      document.getElementById("totalAdeudo").textContent = `$${formatearMoneda(totalAdeudo)}`;
+      document.querySelector(".total-adeudo").textContent = `$${formatearMoneda(totalAdeudo)}`;
     }
 
     function renderTablaPrestamos() {
       const tbody = document.getElementById("tablaPrestamos");
-      const filtroEstado = document.getElementById("filtroEstado").value;
-      const buscador = document.getElementById("buscador").value.toLowerCase();
+      const filtro = document.getElementById("filtroEstado").value;
+      const busq = document.getElementById("buscador").value.toLowerCase().trim();
       const hoy = new Date().toISOString().split("T")[0];
+      let list = [...prestamos];
 
-      let filtered = [...prestamos];
+      if (filtro === "activo") list = list.filter(p => p.estado !== "pagado");
+      else if (filtro === "pagado") list = list.filter(p => p.estado === "pagado");
+      else if (filtro === "atrasado") {
+        list = list.filter(p => p.estado !== "pagado" && p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
+      }
 
-      if (filtroEstado === "activo") filtered = filtered.filter(p => p.estado === "activo");
-      else if (filtroEstado === "pagado") filtered = filtered.filter(p => p.estado === "pagado");
-      else if (filtroEstado === "atrasado") filtered = filtered.filter(p => p.estado !== "pagado" && p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
-
-      if (buscador) {
-        filtered = filtered.filter(p => {
-          const cliente = clientes.find(c => c.id === p.cliente_id);
-          const nombre = cliente?.nombre || "";
-          const matricula = cliente?.matricula || "";
-          return nombre.toLowerCase().includes(buscador) || matricula.toLowerCase().includes(buscador);
+      if (busq) {
+        list = list.filter(p => {
+          const c = clientes.find(x => x.id === p.cliente_id);
+          return (c?.nombre || "").toLowerCase().includes(busq) ||
+                 (c?.matricula || "").toLowerCase().includes(busq);
         });
       }
 
-      if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin prestamos registrados</td></tr>';
+      if (!list.length) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5">
+              <div class="empty-state">
+                <div class="empty-state-icono" aria-hidden="true">&#128269;</div>
+                <div class="empty-state-titulo">Sin registros</div>
+                <div class="empty-state-texto">
+                  ${busq ? "No se encontraron resultados para tu busqueda." : "Crea un prestamo o registra un cliente para comenzar."}
+                </div>
+              </div>
+            </td>
+          </tr>`;
         return;
       }
 
-      tbody.innerHTML = filtered.map(p => {
-        const cliente = clientes.find(c => c.id === p.cliente_id) || {};
-        const nombre = cliente.nombre || "Sin nombre";
-        const matricula = cliente.matricula || "-";
-        const estadoClass = p.estado === "pagado" ? "badge-success" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "badge-danger" : "badge-warning");
-        const estadoText = p.estado === "pagado" ? "Pagado" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "Atrasado" : "Activo");
-
-        return `
-          <tr>
-            <td data-label="Cliente"><strong>${nombre}</strong><br><small>${matricula}</small></td>
-            <td data-label="Saldo"><strong>$${formatearMoneda(p.saldo_pendiente)}</strong></td>
-            <td data-label="Pagos">${p.pagos_realizados || 0}/${p.total_pagos || 0}</td>
-            <td data-label="Estado"><span class="badge ${estadoClass}">${estadoText}</span></td>
-            <td data-label="Accion">
-              <button class="btn-sm btn-success" onclick="location.href='registro.html?prestamo=${p.id}'">Pago</button>
-            </td>
-          </tr>
-        `;
+      tbody.innerHTML = list.map(p => {
+        const c = clientes.find(x => x.id === p.cliente_id) || {};
+        const nombre = c.nombre || "Sin nombre";
+        const matricula = c.matricula || "";
+        const estado = p.estado === "pagado" ? "pagado" :
+          (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "atrasado" : "activo");
+        return `<tr tabindex="0" onclick="location.href='registro.html?prestamo=${p.id}'" aria-label="Prestamo de ${nombre}">
+          <td>
+            <strong title="${nombre}">${nombre}</strong>
+            <small>${matricula}</small>
+          </td>
+          <td class="monto">$${formatearMoneda(p.saldo_pendiente)}</td>
+          <td>${p.pagos_realizados || 0}/${p.total_pagos || 0}</td>
+          <td><span class="badge ${estado}">${estado}</span></td>
+          <td>
+            <button
+              class="btn-pay"
+              onclick="event.stopPropagation();location.href='registro.html?prestamo=${p.id}'"
+              aria-label="Registrar pago de ${nombre}"
+            >
+              Pagar
+            </button>
+          </td>
+        </tr>`;
       }).join("");
     }
 
     function setupFiltros() {
       document.getElementById("filtroEstado").addEventListener("change", renderTablaPrestamos);
-      document.getElementById("buscador").addEventListener("input", renderTablaPrestamos);
+      const buscador = document.getElementById("buscador");
+      let timeout;
+      buscador.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(renderTablaPrestamos, 300);
+      });
     }
 
-    function confirmarEliminarDatos() {
-      document.getElementById("modalEliminar").classList.add("show");
+    function setupRefresh() {
+      setInterval(async () => {
+        if (!document.hidden) await cargarDatos();
+      }, 15000);
+    }
+
+    function abrirModalEliminar() {
+      const modal = document.getElementById("modalEliminar");
+      modal.setAttribute("aria-hidden", "false");
+      modal.style.display = "flex";
+      document.getElementById("btnConfirmarEliminar").focus();
+      document.body.style.overflow = "hidden";
     }
 
     function cerrarModalEliminar() {
-      document.getElementById("modalEliminar").classList.remove("show");
+      const modal = document.getElementById("modalEliminar");
+      modal.setAttribute("aria-hidden", "true");
+      modal.style.display = "none";
+      document.body.style.overflow = "";
     }
 
     async function eliminarDatosPrueba() {
-      const ok = await eliminarTodosLosDatos();
-      if (ok) {
+      const btn = document.getElementById("btnConfirmarEliminar");
+      btn.disabled = true;
+      btn.textContent = "Eliminando...";
+
+      try {
+        await eliminarTodosLosDatos();
         clientes = [];
         prestamos = [];
         pagos = [];
-        await actualizarDashboard();
+        actualizarDashboard();
         renderTablaPrestamos();
         cerrarModalEliminar();
-        mostrarNotificacion("Todos los datos han sido eliminados", "success");
-      } else {
+        mostrarNotificacion("Datos eliminados correctamente", "success");
+      } catch (err) {
+        console.error("[ERROR] eliminarDatosPrueba:", err);
         cerrarModalEliminar();
-        mostrarNotificacion("Error al eliminar datos", "error");
+        mostrarNotificacion("Error al eliminar datos. Intenta de nuevo.", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Eliminar todo";
       }
     }
+
+    document.addEventListener("keydown", (e) => {
+      const modal = document.getElementById("modalEliminar");
+      if (e.key === "Escape" && modal.style.display === "flex") {
+        cerrarModalEliminar();
+      }
+    });
   </script>
 </body>
 </html>

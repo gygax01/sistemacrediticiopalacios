@@ -4,33 +4,50 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
+  <meta name="description" content="Gestion de clientes del sistema de prestamos">
   <title>Clientes - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 
 <body>
-  <header class="header-brand">
+  <header class="header-brand" role="banner">
     <div class="brand">
       <h2>Clientes</h2>
       <p class="brand-sub">Gestion de clientes</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'" aria-label="Volver al inicio">
+        Volver
+      </button>
     </div>
   </header>
 
-  <div class="filtros">
-    <input type="text" id="buscador" placeholder="Buscar por nombre o matricula...">
-    <select id="filtroEstado">
+  <div class="error-banner" id="errorBanner" role="alert" aria-live="assertive" hidden>
+    <span id="errorMensaje">Error al cargar clientes</span>
+    <button onclick="cargarDatos()">Reintentar</button>
+  </div>
+
+  <div class="filtros" role="search">
+    <label for="buscador" class="sr-only">Buscar por nombre o matricula</label>
+    <input
+      type="search"
+      id="buscador"
+      placeholder="Buscar por nombre o matricula..."
+      aria-label="Buscar por nombre o matricula"
+      autocomplete="off"
+    >
+    <label for="filtroEstado" class="sr-only">Filtrar clientes</label>
+    <select id="filtroEstado" aria-label="Filtrar clientes">
       <option value="todos">Todos</option>
       <option value="con_prestamo">Con prestamo</option>
       <option value="sin_prestamo">Sin prestamos</option>
     </select>
   </div>
 
-  <div id="contenedorTabla" class="table-shell">
-    <table>
+  <!-- Skeleton -->
+  <div class="table-shell" id="skeletonTabla" aria-hidden="false" aria-busy="true">
+    <table aria-label="Cargando clientes">
       <thead>
         <tr>
           <th>Cliente</th>
@@ -39,42 +56,84 @@
           <th></th>
         </tr>
       </thead>
-      <tbody id="tablaClientes"></tbody>
+      <tbody>
+        <tr><td colspan="4" style="padding:0;border:none;">
+          <div class="skeleton-table-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:40px;height:22px;border-radius:12px;"></div></div>
+          <div class="skeleton-table-row"><div class="skeleton skeleton-avatar"></div><div class="skeleton-info"><div class="skeleton skeleton-info-line"></div><div class="skeleton skeleton-info-line"></div></div><div class="skeleton" style="width:40px;height:22px;border-radius:12px;"></div></div>
+        </td></tr>
+      </tbody>
     </table>
   </div>
 
-  <nav class="nav-bottom">
-    <button onclick="location.href='index.html'">
-      <span class="nav-icon">&#9632;</span>
+  <!-- Tabla real -->
+  <div class="table-shell" id="tablaReal" style="display:none" aria-busy="false">
+    <table role="table" aria-label="Lista de clientes">
+      <thead>
+        <tr>
+          <th scope="col">Cliente</th>
+          <th scope="col">Prestamos</th>
+          <th scope="col">Adeudo</th>
+          <th scope="col"><span class="sr-only">Acciones</span></th>
+        </tr>
+      </thead>
+      <tbody id="tablaClientes" aria-live="polite"></tbody>
+    </table>
+  </div>
+
+  <nav class="nav-bottom" role="navigation" aria-label="Navegacion principal">
+    <button onclick="location.href='index.html'" aria-label="Inicio">
+      <span class="nav-icon" aria-hidden="true">&#9632;</span>
       Inicio
     </button>
-    <button onclick="location.href='registro.html'">
-      <span class="nav-icon">+</span>
+    <button onclick="location.href='registro.html'" aria-label="Nuevo prestamo">
+      <span class="nav-icon" aria-hidden="true">+</span>
       Nuevo
     </button>
-    <button class="active" onclick="location.href='clientes.html'">
-      <span class="nav-icon">&#9744;</span>
+    <button class="active" onclick="location.href='clientes.html'" aria-current="page" aria-label="Clientes">
+      <span class="nav-icon" aria-hidden="true">&#9744;</span>
       Clientes
     </button>
-    <button onclick="location.href='historial.html'">
-      <span class="nav-icon">&#9745;</span>
+    <button onclick="location.href='historial.html'" aria-label="Historial de pagos">
+      <span class="nav-icon" aria-hidden="true">&#9745;</span>
       Pagos
     </button>
-    <button onclick="location.href='reportes.html'">
-      <span class="nav-icon">&#9633;</span>
+    <button onclick="location.href='reportes.html'" aria-label="Reportes">
+      <span class="nav-icon" aria-hidden="true">&#9633;</span>
       Reportes
     </button>
   </nav>
 
-  <div class="modal" id="modalCliente">
+  <div
+    class="modal"
+    id="modalCliente"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="modalClienteTitulo"
+    aria-hidden="true"
+    tabindex="-1"
+  >
     <div class="modal-content">
-      <button class="close" onclick="cerrarModal()">&times;</button>
-      <h3>Datos del Cliente</h3>
+      <button class="close" onclick="cerrarModal()" aria-label="Cerrar modal">&times;</button>
+      <h3 id="modalClienteTitulo">Datos del Cliente</h3>
       <div id="detalleCliente"></div>
       <h4>Historial de Prestamos</h4>
       <div id="historialPrestamosCliente"></div>
     </div>
   </div>
+
+  <style>
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0,0,0,0);
+      white-space: nowrap;
+      border: 0;
+    }
+  </style>
 
   <script src="js/config.js"></script>
   <script src="js/storage.js"></script>
@@ -82,25 +141,79 @@
   <script>
     let clientes = [];
     let prestamos = [];
+    let estaCargando = false;
 
-    window.addEventListener("load", async () => {
-      clientes = await obtenerClientes();
-      prestamos = await obtenerPrestamos();
-      renderTablaClientes();
-      setupFiltros();
-    });
+    window.addEventListener("load", () => cargarDatos());
+
+    async function cargarDatos() {
+      if (estaCargando) return;
+      estaCargando = true;
+
+      mostrarSkeleton(true);
+      ocultarError();
+
+      try {
+        const [c, p] = await Promise.all([
+          obtenerClientes(),
+          obtenerPrestamos()
+        ]);
+
+        if (c === null || p === null) throw new Error("No se pudieron obtener los datos");
+
+        clientes = c;
+        prestamos = p;
+
+        renderTablaClientes();
+        setupFiltros();
+        mostrarSkeleton(false);
+      } catch (err) {
+        console.error("[ERROR] cargarDatos:", err);
+        mostrarSkeleton(false);
+        mostrarError("Error al cargar clientes. Verifica tu conexion.");
+      } finally {
+        estaCargando = false;
+      }
+    }
+
+    function mostrarSkeleton(mostrar) {
+      const sk = document.getElementById("skeletonTabla");
+      const real = document.getElementById("tablaReal");
+      if (mostrar) {
+        sk.style.display = "block";
+        sk.setAttribute("aria-hidden", "false");
+        sk.setAttribute("aria-busy", "true");
+        real.style.display = "none";
+        real.setAttribute("aria-hidden", "true");
+      } else {
+        sk.style.display = "none";
+        sk.setAttribute("aria-hidden", "true");
+        real.style.display = "block";
+        real.setAttribute("aria-hidden", "false");
+        real.setAttribute("aria-busy", "false");
+      }
+    }
+
+    function mostrarError(mensaje) {
+      const b = document.getElementById("errorBanner");
+      document.getElementById("errorMensaje").textContent = mensaje;
+      b.hidden = false;
+    }
+
+    function ocultarError() {
+      document.getElementById("errorBanner").hidden = true;
+    }
 
     function renderTablaClientes() {
       const tbody = document.getElementById("tablaClientes");
-      const buscador = document.getElementById("buscador").value.toLowerCase();
+      const busq = document.getElementById("buscador").value.toLowerCase().trim();
       const filtroEstado = document.getElementById("filtroEstado").value;
 
       let filtered = [...clientes];
 
-      if (buscador) {
+      if (busq) {
         filtered = filtered.filter(c =>
-          c.nombre.toLowerCase().includes(buscador) ||
-          (c.matricula && c.matricula.toLowerCase().includes(buscador))
+          (c.nombre || "").toLowerCase().includes(busq) ||
+          (c.matricula || "").toLowerCase().includes(busq)
         );
       }
 
@@ -113,32 +226,48 @@
       }
 
       if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center">Sin clientes registrados</td></tr>';
+        tbody.innerHTML = `
+          <tr><td colspan="4">
+            <div class="empty-state">
+              <div class="empty-state-icono" aria-hidden="true">&#128100;</div>
+              <div class="empty-state-titulo">Sin clientes registrados</div>
+              <div class="empty-state-texto">
+                ${busq ? "No se encontraron resultados." : "Registra tu primer cliente desde la pestana Nuevo."}
+              </div>
+            </div>
+          </td></tr>`;
         return;
       }
 
       tbody.innerHTML = filtered.map(c => {
         const prestamosCliente = prestamos.filter(p => p.cliente_id === c.id && p.estado !== "pagado");
         const totalAdeudo = prestamosCliente.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
+        const nombre = c.nombre || "Sin nombre";
 
         return `
-          <tr onclick="verDetalleCliente('${c.id}')">
+          <tr tabindex="0" onclick="verDetalleCliente('${c.id}')" aria-label="Cliente ${nombre}">
             <td data-label="Cliente">
-              <strong>${c.nombre}</strong><br>
-              <small style="color:var(--gray-500)">${c.matricula || "-"} | ${c.telefono || "-"}</small>
+              <strong title="${nombre}">${nombre}</strong><br>
+              <small>${c.matricula || "-"} | ${c.telefono || "-"}</small>
             </td>
             <td data-label="Prestamos"><strong>${prestamosCliente.length}</strong></td>
             <td data-label="Adeudo">$${formatearMoneda(totalAdeudo)}</td>
             <td data-label="">
-              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html'">+ Prestamo</button>
+              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html'" aria-label="Crear prestamo para ${nombre}">
+                + Prestamo
+              </button>
             </td>
-          </tr>
-        `;
+          </tr>`;
       }).join("");
     }
 
     function setupFiltros() {
-      document.getElementById("buscador").addEventListener("input", renderTablaClientes);
+      const buscador = document.getElementById("buscador");
+      let timeout;
+      buscador.addEventListener("input", () => {
+        clearTimeout(timeout);
+        timeout = setTimeout(renderTablaClientes, 300);
+      });
       document.getElementById("filtroEstado").addEventListener("change", renderTablaClientes);
     }
 
@@ -149,35 +278,48 @@
       if (!cliente) return;
 
       document.getElementById("detalleCliente").innerHTML = `
-        <p><strong>Nombre:</strong> ${cliente.nombre}</p>
-        <p><strong>Matricula:</strong> ${cliente.matricula || "N/A"}</p>
-        <p><strong>Telefono:</strong> ${cliente.telefono || "N/A"}</p>
-        <p><strong>Email:</strong> ${cliente.email || "N/A"}</p>
-        <p><strong>Direccion:</strong> ${cliente.direccion || "N/A"}</p>
-        <p><strong>Notas:</strong> ${cliente.notas || "N/A"}</p>
-        <p><strong>Registrado:</strong> ${new Date(cliente.created_at).toLocaleDateString("es-MX")}</p>
+        <p><strong>Nombre:</strong> <span>${cliente.nombre || "N/A"}</span></p>
+        <p><strong>Matricula:</strong> <span>${cliente.matricula || "N/A"}</span></p>
+        <p><strong>Telefono:</strong> <span>${cliente.telefono || "N/A"}</span></p>
+        <p><strong>Email:</strong> <span>${cliente.email || "N/A"}</span></p>
+        <p><strong>Direccion:</strong> <span>${cliente.direccion || "N/A"}</span></p>
+        <p><strong>Notas:</strong> <span>${cliente.notas || "N/A"}</span></p>
+        <p><strong>Registrado:</strong> <span>${new Date(cliente.created_at).toLocaleDateString("es-MX")}</span></p>
       `;
 
       document.getElementById("historialPrestamosCliente").innerHTML = prestamosCliente.length
         ? prestamosCliente.map(p => `
             <div class="historial-item">
-              <p><strong>Monto:</strong> $${formatearMoneda(p.monto_total)} | <strong>Saldo:</strong> $${formatearMoneda(p.saldo_pendiente)}</p>
-              <p><strong>Estado:</strong> ${p.estado} | <strong>Pagos:</strong> ${p.pagos_realizados}/${p.total_pagos}</p>
+              <p><strong>Monto:</strong> <span>$${formatearMoneda(p.monto_total)}</span></p>
+              <p><strong>Saldo:</strong> <span>$${formatearMoneda(p.saldo_pendiente)}</span></p>
+              <p><strong>Pagos:</strong> <span>${p.pagos_realizados}/${p.total_pagos}</span></p>
             </div>
           `).join("")
         : "<p class='text-success'>Sin prestamos registrados</p>";
 
-      document.getElementById("modalCliente").className = "modal show";
+      const modal = document.getElementById("modalCliente");
+      modal.className = "modal show";
+      modal.setAttribute("aria-hidden", "false");
+      modal.setAttribute("tabindex", "0");
+      modal.focus();
+      document.body.style.overflow = "hidden";
     }
 
     function cerrarModal() {
-      document.getElementById("modalCliente").className = "modal";
+      const modal = document.getElementById("modalCliente");
+      modal.className = "modal";
+      modal.setAttribute("aria-hidden", "true");
+      document.body.style.overflow = "";
     }
 
-    window.onclick = function(e) {
+    window.addEventListener("click", (e) => {
       const modal = document.getElementById("modalCliente");
       if (e.target === modal) cerrarModal();
-    };
+    });
+
+    window.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") cerrarModal();
+    });
   </script>
 </body>
 </html>
