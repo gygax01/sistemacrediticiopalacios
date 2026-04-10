@@ -4,8 +4,6 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <title>Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -17,7 +15,6 @@
       <h2>Sistema de Prestamos</h2>
       <p class="brand-sub">Beta v1.0</p>
     </div>
-
     <div class="header-actions">
       <span id="totalAdeudo" class="stat-pill is-red">$0.00</span>
       <span id="estadoConexion" class="lector off">Offline</span>
@@ -25,7 +22,7 @@
   </header>
 
   <div class="beta-banner">
-    <span>MODO BETA</span>
+    <span>Modo Beta</span>
     <button class="btn-eliminar-datos" onclick="confirmarEliminarDatos()">Eliminar datos de prueba</button>
   </div>
 
@@ -74,7 +71,7 @@
           <th>Saldo</th>
           <th>Pagos</th>
           <th>Estado</th>
-          <th></th>
+          <th>Accion</th>
         </tr>
       </thead>
       <tbody id="tablaPrestamos"></tbody>
@@ -107,7 +104,7 @@
   <div class="modal-confirm" id="modalEliminar">
     <div class="modal-confirm-content">
       <h3>Eliminar todos los datos</h3>
-      <p>Esto eliminara TODOS los clientes, prestamos y pagos. Esta accion no se puede deshacer.</p>
+      <p>Esto eliminara todos los clientes, prestamos y pagos. Esta accion no se puede deshacer.</p>
       <div class="modal-confirm-actions">
         <button class="btn-cancelar" onclick="cerrarModalEliminar()">Cancelar</button>
         <button class="btn-confirmar-eliminar" onclick="eliminarDatosPrueba()">Si, eliminar todo</button>
@@ -138,7 +135,7 @@
         await cargarDatos();
         await actualizarDashboard();
         renderTablaPrestamos();
-      }, 10000);
+      }, 15000);
     });
 
     async function cargarDatos() {
@@ -204,23 +201,21 @@
         return;
       }
 
-      const esMobile = window.innerWidth < 768;
-      
       tbody.innerHTML = filtered.map(p => {
         const cliente = clientes.find(c => c.id === p.cliente_id) || {};
         const nombre = cliente.nombre || "Sin nombre";
         const matricula = cliente.matricula || "-";
         const estadoClass = p.estado === "pagado" ? "badge-success" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "badge-danger" : "badge-warning");
-        const estadoText = p.estado === "pagado" ? (esMobile ? "Pagado" : "Pagado") : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? (esMobile ? "Atrasado" : "Atrasado") : (esMobile ? "Activo" : "Activo"));
+        const estadoText = p.estado === "pagado" ? "Pagado" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "Atrasado" : "Activo");
 
         return `
-          <tr onclick="verDetallePrestamo('${p.id}')">
-            <td data-label="Cliente"><strong>${nombre}</strong><br><small style="color:var(--gray-500)">${matricula}</small></td>
+          <tr>
+            <td data-label="Cliente"><strong>${nombre}</strong><br><small>${matricula}</small></td>
             <td data-label="Saldo"><strong>$${formatearMoneda(p.saldo_pendiente)}</strong></td>
             <td data-label="Pagos">${p.pagos_realizados || 0}/${p.total_pagos || 0}</td>
             <td data-label="Estado"><span class="badge ${estadoClass}">${estadoText}</span></td>
-            <td data-label="">
-              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html?prestamo=${p.id}'">Pago</button>
+            <td data-label="Accion">
+              <button class="btn-sm btn-success" onclick="location.href='registro.html?prestamo=${p.id}'">Pago</button>
             </td>
           </tr>
         `;
@@ -230,22 +225,6 @@
     function setupFiltros() {
       document.getElementById("filtroEstado").addEventListener("change", renderTablaPrestamos);
       document.getElementById("buscador").addEventListener("input", renderTablaPrestamos);
-    }
-
-    function verDetallePrestamo(id) {
-      const prestamo = prestamos.find(p => p.id === id);
-      if (!prestamo) return;
-
-      const cliente = clientes.find(c => c.id === prestamo.cliente_id);
-      const pagosPrestamo = pagos.filter(p => p.prestamo_id === id);
-
-      mostrarNotificacion(
-        `Cliente: ${cliente?.nombre || "N/A"}\n` +
-        `Monto: $${formatearMoneda(prestamo.monto_total)}\n` +
-        `Saldo: $${formatearMoneda(prestamo.saldo_pendiente)}\n` +
-        `Pagos: ${pagosPrestamo.length}/${prestamo.total_pagos || 0}`,
-        "info"
-      );
     }
 
     function confirmarEliminarDatos() {
