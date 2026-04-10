@@ -1,36 +1,67 @@
 let supabaseClient = null;
 
 async function initSupabase() {
+  console.log("[DEBUG] initSupabase llamado");
+  console.log("[DEBUG] URL:", SUPABASE_URL);
+  console.log("[DEBUG] KEY:", SUPABASE_ANON_KEY ? "presente" : "vacia");
+  
   if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
     console.error("[SUPABASE] No configurado");
+    alert("ERROR: Supabase no configurado");
     return null;
   }
 
-  if (supabaseClient) return supabaseClient;
+  if (supabaseClient) {
+    console.log("[DEBUG] Client ya existente");
+    return supabaseClient;
+  }
 
   try {
-    const { createClient } = window.supabase || await import("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+    console.log("[DEBUG] Creando client Supabase...");
+    
+    if (!window.supabase) {
+      console.error("[DEBUG] window.supabase NO existe!");
+      alert("ERROR: Libreria Supabase no cargó. Recarga la página.");
+      return null;
+    }
+    
+    const { createClient } = window.supabase;
     supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    console.log("[DEBUG] Client creado:", typeof supabaseClient);
     return supabaseClient;
   } catch (err) {
     console.error("[SUPABASE] Error al inicializar:", err);
+    alert("ERROR al inicializar: " + err.message);
     return null;
   }
 }
 
 async function obtenerClientes() {
   const client = await initSupabase();
+  console.log("[DEBUG] obtenerClientes, client:", client ? "ok" : "null");
   if (!client) return [];
   const { data, error } = await client.from("clientes").select("*").order("created_at", { ascending: false });
-  if (error) { console.error("[CLIENTES]", error); return []; }
+  if (error) { 
+    console.error("[CLIENTES ERROR]", error);
+    return []; 
+  }
+  console.log("[DEBUG] Clientes obtenidos:", data?.length || 0);
   return data || [];
 }
 
 async function guardarCliente(cliente) {
   const client = await initSupabase();
-  if (!client) return null;
+  console.log("[DEBUG] Guardando cliente:", cliente);
+  if (!client) {
+    console.error("[DEBUG] Client es null");
+    return null;
+  }
   const { data, error } = await client.from("clientes").insert(cliente).select().single();
-  if (error) { console.error("[CLIENTES]", error); return null; }
+  if (error) { 
+    console.error("[CLIENTES ERROR]", error);
+    return null; 
+  }
+  console.log("[DEBUG] Cliente guardado:", data);
   return data;
 }
 
@@ -44,9 +75,17 @@ async function obtenerPrestamos() {
 
 async function guardarPrestamo(prestamo) {
   const client = await initSupabase();
-  if (!client) return null;
+  console.log("[DEBUG] Guardando prestamo:", prestamo);
+  if (!client) {
+    console.error("[DEBUG] Client es null");
+    return null;
+  }
   const { data, error } = await client.from("prestamos").insert(prestamo).select().single();
-  if (error) { console.error("[PRESTAMOS]", error); return null; }
+  if (error) { 
+    console.error("[PRESTAMOS ERROR]", error);
+    return null; 
+  }
+  console.log("[DEBUG] Prestamo guardado:", data);
   return data;
 }
 
@@ -68,9 +107,17 @@ async function obtenerPagos() {
 
 async function guardarPago(pago) {
   const client = await initSupabase();
-  if (!client) return null;
+  console.log("[DEBUG] Guardando pago:", pago);
+  if (!client) {
+    console.error("[DEBUG] Client es null");
+    return null;
+  }
   const { data, error } = await client.from("pagos").insert(pago).select().single();
-  if (error) { console.error("[PAGOS]", error); return null; }
+  if (error) { 
+    console.error("[PAGOS ERROR]", error);
+    return null; 
+  }
+  console.log("[DEBUG] Pago guardado:", data);
   return data;
 }
 
