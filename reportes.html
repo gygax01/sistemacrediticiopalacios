@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <title>Reportes - Sistema de Préstamos</title>
+  <title>Reportes - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,79 +12,79 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>📈 Reportes</h2>
-      <p class="brand-sub">Estadísticas y exportaciones</p>
+      <h2>Reportes</h2>
+      <p class="brand-sub">Estadisticas y exportaciones</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
     </div>
   </header>
 
   <main class="reportes-container">
     <article class="reporte-card">
-      <h3>📊 Resumen General</h3>
+      <h3>Resumen General</h3>
       <div id="resumenGeneral"></div>
-      <button class="btn-primary" onclick="descargarResumenGeneral()">📥 Descargar CSV</button>
+      <button class="btn-primary" onclick="descargarResumenGeneral()">Descargar CSV</button>
     </article>
 
     <article class="reporte-card">
-      <h3>⚠️ Préstamos Atrasados</h3>
+      <h3>Prestamos Atrasados</h3>
       <div id="prestamosAtrasados"></div>
-      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">📥 Descargar Lista</button>
+      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">Descargar Lista</button>
     </article>
 
     <article class="reporte-card">
-      <h3>💰 Estado de Cuenta</h3>
+      <h3>Estado de Cuenta</h3>
       <select id="clienteReporte">
         <option value="todos">Todos los clientes</option>
       </select>
       <div id="estadoCuentaCliente"></div>
-      <button class="btn-primary" onclick="descargarEstadoCuenta()">📥 Descargar</button>
+      <button class="btn-primary" onclick="descargarEstadoCuenta()">Descargar</button>
     </article>
 
     <article class="reporte-card">
-      <h3>📈 Flujo de Efectivo</h3>
+      <h3>Flujo de Efectivo</h3>
       <div id="flujoEfectivo"></div>
-      <button class="btn-primary" onclick="descargarFlujoEfectivo()">📥 Descargar CSV</button>
+      <button class="btn-primary" onclick="descargarFlujoEfectivo()">Descargar CSV</button>
     </article>
   </main>
 
   <nav class="nav-bottom">
     <button onclick="location.href='index.html'">
-      <span>📊</span>
+      <span class="nav-icon">&#9632;</span>
       Inicio
     </button>
     <button onclick="location.href='registro.html'">
-      <span>➕</span>
+      <span class="nav-icon">+</span>
       Nuevo
     </button>
     <button onclick="location.href='clientes.html'">
-      <span>👥</span>
+      <span class="nav-icon">&#9744;</span>
       Clientes
     </button>
     <button onclick="location.href='historial.html'">
-      <span>📋</span>
+      <span class="nav-icon">&#9745;</span>
       Pagos
     </button>
     <button class="active" onclick="location.href='reportes.html'">
-      <span>📈</span>
+      <span class="nav-icon">&#9633;</span>
       Reportes
     </button>
   </nav>
 
   <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <script src="js/prestamos.js"></script>
-  <script src="js/pagos.js"></script>
   <script src="js/reportes.js"></script>
 
   <script>
+    let clientes = [];
+    let prestamos = [];
+    let pagos = [];
+
     window.addEventListener("load", async () => {
-      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
-      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+      clientes = await obtenerClientes();
+      prestamos = await obtenerPrestamos();
+      pagos = await obtenerPagos();
 
       poblarSelectClientesReporte();
       renderResumenGeneral();
@@ -93,50 +93,40 @@
       renderFlujoEfectivo();
     });
 
-    function formatearMoneda(num) {
-      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
     function poblarSelectClientesReporte() {
       const select = document.getElementById("clienteReporte");
-      const clientes = obtenerClientes();
       select.innerHTML = '<option value="todos">Todos</option>' +
         clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
       select.addEventListener("change", renderEstadoCuentaCliente);
     }
 
     function renderResumenGeneral() {
-      const prestamos = obtenerPrestamos();
-      const clientes = obtenerClientes();
-      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
-
       const activos = prestamos.filter(p => p.estado === "activo");
       const pagados = prestamos.filter(p => p.estado === "pagado");
       const hoy = new Date().toISOString().split("T")[0];
       const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
 
       const totalPrestado = prestamos.reduce((sum, p) => sum + (p.monto_total || 0), 0);
-      const totalCobrado = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
+      const totalCobrado = pagos.filter(p => p.estado === "confirmado").reduce((sum, p) => sum + (p.monto || 0), 0);
       const totalPendiente = activos.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
 
       document.getElementById("resumenGeneral").innerHTML = `
-        <div class="stat-row"><span>📊 Total préstamos:</span><strong>${prestamos.length}</strong></div>
-        <div class="stat-row"><span>🔄 Activos:</span><strong>${activos.length}</strong></div>
-        <div class="stat-row"><span>✓ Pagados:</span><strong>${pagados.length}</strong></div>
-        <div class="stat-row"><span>⚠️ Atrasados:</span><strong class="text-danger">${atrasados.length}</strong></div>
-        <div class="stat-row"><span>👥 Clientes:</span><strong>${clientes.length}</strong></div>
-        <div class="stat-row"><span>💵 Total prestado:</span><strong>$${formatearMoneda(totalPrestado)}</strong></div>
-        <div class="stat-row"><span>✅ Total cobrado:</span><strong class="text-success">$${formatearMoneda(totalCobrado)}</strong></div>
-        <div class="stat-row"><span>📊 Total pendiente:</span><strong>$${formatearMoneda(totalPendiente)}</strong></div>
+        <div class="stat-row"><span>Total prestamos:</span><strong>${prestamos.length}</strong></div>
+        <div class="stat-row"><span>Activos:</span><strong>${activos.length}</strong></div>
+        <div class="stat-row"><span>Pagados:</span><strong>${pagados.length}</strong></div>
+        <div class="stat-row"><span>Atrasados:</span><strong class="text-danger">${atrasados.length}</strong></div>
+        <div class="stat-row"><span>Clientes:</span><strong>${clientes.length}</strong></div>
+        <div class="stat-row"><span>Total prestado:</span><strong>$${formatearMoneda(totalPrestado)}</strong></div>
+        <div class="stat-row"><span>Total cobrado:</span><strong class="text-success">$${formatearMoneda(totalCobrado)}</strong></div>
+        <div class="stat-row"><span>Total pendiente:</span><strong>$${formatearMoneda(totalPendiente)}</strong></div>
       `;
     }
 
     function renderPrestamosAtrasados() {
       const hoy = new Date().toISOString().split("T")[0];
-      const atrasados = obtenerPrestamos().filter(p =>
+      const atrasados = prestamos.filter(p =>
         p.estado !== "pagado" && p.fecha_proximo_pago && p.fecha_proximo_pago < hoy
       );
-      const clientes = obtenerClientes();
 
       const diasAtraso = (fecha) => Math.floor((new Date() - new Date(fecha)) / (1000 * 60 * 60 * 24));
 
@@ -147,26 +137,23 @@
             return `
               <div class="prestamo-atrasado">
                 <strong>${cliente?.nombre || "N/A"}</strong>
-                <span>Días: <strong class="text-danger">${dias}</strong></span>
+                <span>Dias: <strong class="text-danger">${dias}</strong></span>
                 <span>Saldo: <strong>$${formatearMoneda(p.saldo_pendiente)}</strong></span>
               </div>
             `;
           }).join("")
-        : "<p class='text-success'>✓ Sin préstamos atrasados</p>";
+        : "<p class='text-success'>Sin prestamos atrasados</p>";
     }
 
     function renderEstadoCuentaCliente() {
       const clienteId = document.getElementById("clienteReporte").value;
-      const clientes = obtenerClientes();
-      const prestamos = obtenerPrestamos();
-      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
 
       let filtered = [];
 
       if (clienteId === "todos") {
         filtered = clientes.map(c => {
           const prests = prestamos.filter(p => p.cliente_id === c.id);
-          const ps = pagos.filter(p => p.cliente_id === c.id);
+          const ps = pagos.filter(p => p.cliente_id === c.id && p.estado === "confirmado");
           return {
             cliente: c,
             totalPrestado: prests.reduce((s, p) => s + (p.monto_total || 0), 0),
@@ -178,7 +165,7 @@
         const cliente = clientes.find(c => c.id === clienteId);
         if (cliente) {
           const prests = prestamos.filter(p => p.cliente_id === clienteId);
-          const ps = pagos.filter(p => p.cliente_id === clienteId);
+          const ps = pagos.filter(p => p.cliente_id === clienteId && p.estado === "confirmado");
           filtered = [{
             cliente,
             totalPrestado: prests.reduce((s, p) => s + (p.monto_total || 0), 0),
@@ -192,19 +179,19 @@
         ? filtered.map(r => `
             <div class="cliente-resumen">
               <strong>${r.cliente.nombre}</strong>
-              <div class="stat-row"><span>💵 Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
-              <div class="stat-row"><span>✅ Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
-              <div class="stat-row"><span>📊 Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>
+              <div class="stat-row"><span>Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
+              <div class="stat-row"><span>Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
+              <div class="stat-row"><span>Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>
             </div>
           `).join("")
         : "<p>Sin datos</p>";
     }
 
     function renderFlujoEfectivo() {
-      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
+      const pagosConfirmados = pagos.filter(p => p.estado === "confirmado");
       const meses = {};
 
-      pagos.forEach(p => {
+      pagosConfirmados.forEach(p => {
         const fecha = new Date(p.fecha_pago);
         const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
         meses[key] = (meses[key] || 0) + (p.monto || 0);
@@ -222,22 +209,30 @@
     }
 
     async function descargarResumenGeneral() {
-      if (typeof generarReporteResumenGeneralCsv === "function") await generarReporteResumenGeneralCsv();
+      if (typeof generarReporteResumenGeneralCsv === "function") {
+        await generarReporteResumenGeneralCsv(clientes, prestamos, pagos);
+      }
       mostrarNotificacion("Reporte descargado", "success");
     }
 
     async function descargarEstadoCuenta() {
-      if (typeof generarReporteEstadoCuentaCsv === "function") await generarReporteEstadoCuentaCsv();
+      if (typeof generarReporteEstadoCuentaCsv === "function") {
+        await generarReporteEstadoCuentaCsv(clientes, prestamos, pagos);
+      }
       mostrarNotificacion("Estado de cuenta descargado", "success");
     }
 
     async function descargarPrestamosAtrasados() {
-      if (typeof generarReporteAtrasadosCsv === "function") await generarReporteAtrasadosCsv();
+      if (typeof generarReporteAtrasadosCsv === "function") {
+        await generarReporteAtrasadosCsv(clientes, prestamos);
+      }
       mostrarNotificacion("Lista descargada", "success");
     }
 
     async function descargarFlujoEfectivo() {
-      if (typeof generarReporteFlujoEfectivoCsv === "function") await generarReporteFlujoEfectivoCsv();
+      if (typeof generarReporteFlujoEfectivoCsv === "function") {
+        await generarReporteFlujoEfectivoCsv(pagos);
+      }
       mostrarNotificacion("Flujo de efectivo descargado", "success");
     }
   </script>

@@ -6,7 +6,7 @@
   <meta name="theme-color" content="#6366f1">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <title>Préstamos - Dashboard</title>
+  <title>Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -14,8 +14,8 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>💰 Sistema de Préstamos</h2>
-      <p class="brand-sub">Gestión Crediticia</p>
+      <h2>Sistema de Prestamos</h2>
+      <p class="brand-sub">Beta v1.0</p>
     </div>
 
     <div class="header-actions">
@@ -24,27 +24,32 @@
     </div>
   </header>
 
+  <div class="beta-banner">
+    <span>MODO BETA</span>
+    <button class="btn-eliminar-datos" onclick="confirmarEliminarDatos()">Eliminar datos de prueba</button>
+  </div>
+
   <section class="dashboard-grid">
     <article class="stat-card is-orange">
-      <h3>📊 Activos</h3>
+      <h3>Activos</h3>
       <p id="dashPrestamosActivos">0</p>
     </article>
     <article class="stat-card is-green">
-      <h3>👥 Clientes</h3>
+      <h3>Clientes</h3>
       <p id="dashClientes">0</p>
     </article>
     <article class="stat-card">
-      <h3>💵 Pagos Mes</h3>
+      <h3>Pagos Mes</h3>
       <p id="dashPagosMes">0</p>
     </article>
     <article class="stat-card is-red">
-      <h3>⚠️ Atrasados</h3>
+      <h3>Atrasados</h3>
       <p id="dashAtrasados">0</p>
     </article>
   </section>
 
   <div class="filtros">
-    <input type="text" id="buscador" placeholder="🔍 Buscar cliente...">
+    <input type="text" id="buscador" placeholder="Buscar cliente...">
     <select id="filtroEstado">
       <option value="todos">Todos</option>
       <option value="activo">Activos</option>
@@ -57,10 +62,10 @@
     <table>
       <thead>
         <tr>
-          <th>👤 Cliente</th>
-          <th>💵 Saldo</th>
-          <th>📅 Pagos</th>
-          <th>🏷️ Estado</th>
+          <th>Cliente</th>
+          <th>Saldo</th>
+          <th>Pagos</th>
+          <th>Estado</th>
           <th></th>
         </tr>
       </thead>
@@ -70,80 +75,82 @@
 
   <nav class="nav-bottom">
     <button class="active" onclick="location.href='index.html'">
-      <span>📊</span>
+      <span class="nav-icon">&#9632;</span>
       Inicio
     </button>
     <button onclick="location.href='registro.html'">
-      <span>➕</span>
+      <span class="nav-icon">+</span>
       Nuevo
     </button>
     <button onclick="location.href='clientes.html'">
-      <span>👥</span>
+      <span class="nav-icon">&#9744;</span>
       Clientes
     </button>
     <button onclick="location.href='historial.html'">
-      <span>📋</span>
+      <span class="nav-icon">&#9745;</span>
       Pagos
     </button>
     <button onclick="location.href='reportes.html'">
-      <span>📈</span>
+      <span class="nav-icon">&#9633;</span>
       Reportes
     </button>
   </nav>
 
-  <div class="confirmacion" id="confirmacion">
-    <div class="box">
-      <h1 id="tituloConfirmacion"></h1>
-      <p id="mensajeConfirmacion"></p>
+  <div class="modal-confirm" id="modalEliminar">
+    <div class="modal-confirm-content">
+      <h3>Eliminar todos los datos</h3>
+      <p>Esto eliminara TODOS los clientes, prestamos y pagos. Esta accion no se puede deshacer.</p>
+      <div class="modal-confirm-actions">
+        <button class="btn-cancelar" onclick="cerrarModalEliminar()">Cancelar</button>
+        <button class="btn-confirmar-eliminar" onclick="eliminarDatosPrueba()">Si, eliminar todo</button>
+      </div>
     </div>
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <script src="js/prestamos.js"></script>
-  <script src="js/pagos.js"></script>
-  <script src="js/reportes.js"></script>
 
   <script>
+    let clientes = [];
+    let prestamos = [];
+    let pagos = [];
+
     window.addEventListener("load", async () => {
       const estadoConexion = document.getElementById("estadoConexion");
       actualizarEstadoConexion(estadoConexion);
       window.addEventListener("online", () => actualizarEstadoConexion(estadoConexion));
       window.addEventListener("offline", () => actualizarEstadoConexion(estadoConexion));
 
-      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
-      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
-
+      await cargarDatos();
       await actualizarDashboard();
       renderTablaPrestamos();
       setupFiltros();
 
       setInterval(async () => {
-        if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+        await cargarDatos();
         await actualizarDashboard();
         renderTablaPrestamos();
       }, 10000);
     });
 
+    async function cargarDatos() {
+      clientes = await obtenerClientes();
+      prestamos = await obtenerPrestamos();
+      pagos = await obtenerPagos();
+    }
+
     function actualizarEstadoConexion(el) {
       if (!el) return;
       if (navigator.onLine) {
-        el.textContent = "🟢 Online";
+        el.textContent = "Online";
         el.className = "lector on";
         return;
       }
-      el.textContent = "🔴 Offline";
+      el.textContent = "Offline";
       el.className = "lector off";
     }
 
     async function actualizarDashboard() {
-      const prestamos = obtenerPrestamos();
-      const clientes = obtenerClientes();
-      const pagos = obtenerPagos();
-
       const activos = prestamos.filter(p => p.estado !== "pagado");
       const hoy = new Date().toISOString().split("T")[0];
       const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
@@ -163,19 +170,13 @@
       document.getElementById("totalAdeudo").textContent = `$${formatearMoneda(totalAdeudo)}`;
     }
 
-    function formatearMoneda(num) {
-      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
     function renderTablaPrestamos() {
       const tbody = document.getElementById("tablaPrestamos");
       const filtroEstado = document.getElementById("filtroEstado").value;
       const buscador = document.getElementById("buscador").value.toLowerCase();
-      const prestamos = obtenerPrestamos();
-      const clientes = obtenerClientes();
       const hoy = new Date().toISOString().split("T")[0];
 
-      let filtered = prestamos;
+      let filtered = [...prestamos];
 
       if (filtroEstado === "activo") filtered = filtered.filter(p => p.estado === "activo");
       else if (filtroEstado === "pagado") filtered = filtered.filter(p => p.estado === "pagado");
@@ -190,19 +191,19 @@
         });
       }
 
-      filtered.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
       if (!filtered.length) {
-        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin préstamos registrados</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin prestamos registrados</td></tr>';
         return;
       }
 
+      const esMobile = window.innerWidth < 768;
+      
       tbody.innerHTML = filtered.map(p => {
         const cliente = clientes.find(c => c.id === p.cliente_id) || {};
         const nombre = cliente.nombre || "Sin nombre";
         const matricula = cliente.matricula || "-";
         const estadoClass = p.estado === "pagado" ? "badge-success" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "badge-danger" : "badge-warning");
-        const estadoText = p.estado === "pagado" ? "✓ Pagado" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "⚠️ Atrasado" : "🔄 Activo");
+        const estadoText = p.estado === "pagado" ? (esMobile ? "Pagado" : "Pagado") : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? (esMobile ? "Atrasado" : "Atrasado") : (esMobile ? "Activo" : "Activo"));
 
         return `
           <tr onclick="verDetallePrestamo('${p.id}')">
@@ -211,7 +212,7 @@
             <td data-label="Pagos">${p.pagos_realizados || 0}/${p.total_pagos || 0}</td>
             <td data-label="Estado"><span class="badge ${estadoClass}">${estadoText}</span></td>
             <td data-label="">
-              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html?prestamo=${p.id}'">💰 Pago</button>
+              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html?prestamo=${p.id}'">Pago</button>
             </td>
           </tr>
         `;
@@ -224,33 +225,44 @@
     }
 
     function verDetallePrestamo(id) {
-      const prestamo = obtenerPrestamos().find(p => p.id === id);
+      const prestamo = prestamos.find(p => p.id === id);
       if (!prestamo) return;
 
-      const cliente = obtenerClientes().find(c => c.id === prestamo.cliente_id);
-      const pagos = obtenerPagos().filter(p => p.prestamo_id === id);
+      const cliente = clientes.find(c => c.id === prestamo.cliente_id);
+      const pagosPrestamo = pagos.filter(p => p.prestamo_id === id);
 
-      document.getElementById("tituloConfirmacion").textContent = cliente?.nombre || "Detalle";
-      document.getElementById("mensajeConfirmacion").innerHTML = `
-        <strong>📋 Matrícula:</strong> ${cliente?.matricula || "N/A"}<br><br>
-        <strong>💵 Monto total:</strong> $${formatearMoneda(prestamo.monto_total)}<br>
-        <strong>📊 Saldo pendiente:</strong> $${formatearMoneda(prestamo.saldo_pendiente)}<br>
-        <strong>📅 Pagos:</strong> ${pagos.length}/${prestamo.total_pagos || 0}<br><br>
-        <strong>🗓️ Fecha inicio:</strong> ${prestamo.fecha_inicio}<br>
-        <strong>📆 Próximo pago:</strong> ${prestamo.fecha_proximo_pago || "N/A"}
-      `;
-      document.getElementById("confirmacion").className = "confirmacion show";
+      mostrarNotificacion(
+        `Cliente: ${cliente?.nombre || "N/A"}\n` +
+        `Monto: $${formatearMoneda(prestamo.monto_total)}\n` +
+        `Saldo: $${formatearMoneda(prestamo.saldo_pendiente)}\n` +
+        `Pagos: ${pagosPrestamo.length}/${prestamo.total_pagos || 0}`,
+        "info"
+      );
     }
 
-    document.getElementById("confirmacion")?.addEventListener("click", function(e) {
-      if (e.target === this) this.className = "confirmacion";
-    });
+    function confirmarEliminarDatos() {
+      document.getElementById("modalEliminar").classList.add("show");
+    }
 
-    window.addEventListener("storage", async () => {
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
-      renderTablaPrestamos();
-      await actualizarDashboard();
-    });
+    function cerrarModalEliminar() {
+      document.getElementById("modalEliminar").classList.remove("show");
+    }
+
+    async function eliminarDatosPrueba() {
+      const ok = await eliminarTodosLosDatos();
+      if (ok) {
+        clientes = [];
+        prestamos = [];
+        pagos = [];
+        await actualizarDashboard();
+        renderTablaPrestamos();
+        cerrarModalEliminar();
+        mostrarNotificacion("Todos los datos han sido eliminados", "success");
+      } else {
+        cerrarModalEliminar();
+        mostrarNotificacion("Error al eliminar datos", "error");
+      }
+    }
   </script>
 </body>
 </html>

@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <title>Historial - Sistema de Préstamos</title>
+  <title>Historial - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,17 +12,17 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>📋 Historial de Pagos</h2>
+      <h2>Historial de Pagos</h2>
       <p class="brand-sub">Registro de todos los pagos</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
     </div>
   </header>
 
   <div class="stats-resumen">
-    <span>📊 Pagos: <strong id="totalPagosCount">0</strong></span>
-    <span>💵 Total: <strong id="totalMontoPagos">$0.00</strong></span>
+    <span>Pagos: <strong id="totalPagosCount">0</strong></span>
+    <span>Total: <strong id="totalMontoPagos">$0.00</strong></span>
   </div>
 
   <div class="filtros">
@@ -31,16 +31,16 @@
     </select>
     <input type="date" id="fechaInicio">
     <input type="date" id="fechaFin">
-    <button class="btn-sm" onclick="renderTablaPagos()">🔍 Filtrar</button>
+    <button class="btn-sm" onclick="renderTablaPagos()">Filtrar</button>
   </div>
 
   <div id="contenedorTabla" class="table-shell">
     <table>
       <thead>
         <tr>
-          <th>📅 Fecha</th>
-          <th>👤 Cliente</th>
-          <th>💵 Monto</th>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Monto</th>
         </tr>
       </thead>
       <tbody id="tablaPagos"></tbody>
@@ -49,47 +49,37 @@
 
   <nav class="nav-bottom">
     <button onclick="location.href='index.html'">
-      <span>📊</span>
+      <span class="nav-icon">&#9632;</span>
       Inicio
     </button>
     <button onclick="location.href='registro.html'">
-      <span>➕</span>
+      <span class="nav-icon">+</span>
       Nuevo
     </button>
     <button onclick="location.href='clientes.html'">
-      <span>👥</span>
+      <span class="nav-icon">&#9744;</span>
       Clientes
     </button>
     <button class="active" onclick="location.href='historial.html'">
-      <span>📋</span>
+      <span class="nav-icon">&#9745;</span>
       Pagos
     </button>
     <button onclick="location.href='reportes.html'">
-      <span>📈</span>
+      <span class="nav-icon">&#9633;</span>
       Reportes
     </button>
   </nav>
 
-  <div class="confirmacion" id="confirmacion">
-    <div class="box">
-      <h1 id="tituloConfirmacion"></h1>
-      <p id="mensajeConfirmacion"></p>
-    </div>
-  </div>
-
   <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <script src="js/prestamos.js"></script>
-  <script src="js/pagos.js"></script>
-  <script src="js/reportes.js"></script>
 
   <script>
+    let clientes = [];
+    let pagos = [];
+
     window.addEventListener("load", async () => {
-      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
-      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+      clientes = await obtenerClientes();
+      pagos = await obtenerPagos();
 
       poblarSelectClientes();
       establecerFechasDefault();
@@ -98,7 +88,6 @@
 
     function poblarSelectClientes() {
       const select = document.getElementById("filtroCliente");
-      const clientes = obtenerClientes();
       select.innerHTML = '<option value="todos">Todos</option>' +
         clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
     }
@@ -110,17 +99,11 @@
       document.getElementById("fechaFin").value = hoy.toISOString().split("T")[0];
     }
 
-    function formatearMoneda(num) {
-      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
-
     function renderTablaPagos() {
       const tbody = document.getElementById("tablaPagos");
       const fechaInicio = document.getElementById("fechaInicio").value;
       const fechaFin = document.getElementById("fechaFin").value;
       const filtroCliente = document.getElementById("filtroCliente").value;
-      const pagos = obtenerPagos();
-      const clientes = obtenerClientes();
 
       let filtered = pagos.filter(p => p.estado === "confirmado");
 
@@ -153,24 +136,19 @@
     }
 
     function verDetallePago(id) {
-      const pago = obtenerPagos().find(p => p.id === id);
+      const pago = pagos.find(p => p.id === id);
       if (!pago) return;
 
-      const cliente = obtenerClientes().find(c => c.id === pago.cliente_id);
+      const cliente = clientes.find(c => c.id === pago.cliente_id);
 
-      document.getElementById("tituloConfirmacion").textContent = "📋 Detalle del Pago";
-      document.getElementById("mensajeConfirmacion").innerHTML = `
-        <strong>👤 Cliente:</strong> ${cliente?.nombre || "N/A"}<br><br>
-        <strong>💵 Monto:</strong> $${formatearMoneda(pago.monto)}<br>
-        <strong>📅 Fecha:</strong> ${pago.fecha_pago}<br>
-        <strong>📝 Nota:</strong> ${pago.nota || "Sin nota"}
-      `;
-      document.getElementById("confirmacion").className = "confirmacion show";
+      mostrarNotificacion(
+        `Cliente: ${cliente?.nombre || "N/A"}\n` +
+        `Monto: $${formatearMoneda(pago.monto)}\n` +
+        `Fecha: ${pago.fecha_pago}\n` +
+        `Nota: ${pago.nota || "Sin nota"}`,
+        "info"
+      );
     }
-
-    document.getElementById("confirmacion")?.addEventListener("click", function(e) {
-      if (e.target === this) this.className = "confirmacion";
-    });
   </script>
 </body>
 </html>

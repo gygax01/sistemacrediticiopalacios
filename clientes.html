@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <title>Clientes - Sistema de Préstamos</title>
+  <title>Clientes - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -12,20 +12,20 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>👥 Clientes</h2>
-      <p class="brand-sub">Gestión de clientes</p>
+      <h2>Clientes</h2>
+      <p class="brand-sub">Gestion de clientes</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
     </div>
   </header>
 
   <div class="filtros">
-    <input type="text" id="buscador" placeholder="🔍 Buscar por nombre o matrícula...">
+    <input type="text" id="buscador" placeholder="Buscar por nombre o matricula...">
     <select id="filtroEstado">
       <option value="todos">Todos</option>
-      <option value="con_prestamo">Con préstamo</option>
-      <option value="sin_prestamo">Sin préstamos</option>
+      <option value="con_prestamo">Con prestamo</option>
+      <option value="sin_prestamo">Sin prestamos</option>
     </select>
   </div>
 
@@ -33,9 +33,9 @@
     <table>
       <thead>
         <tr>
-          <th>👤 Cliente</th>
-          <th>📊 Préstamos</th>
-          <th>💵 Adeudo</th>
+          <th>Cliente</th>
+          <th>Prestamos</th>
+          <th>Adeudo</th>
           <th></th>
         </tr>
       </thead>
@@ -45,64 +45,57 @@
 
   <nav class="nav-bottom">
     <button onclick="location.href='index.html'">
-      <span>📊</span>
+      <span class="nav-icon">&#9632;</span>
       Inicio
     </button>
     <button onclick="location.href='registro.html'">
-      <span>➕</span>
+      <span class="nav-icon">+</span>
       Nuevo
     </button>
     <button class="active" onclick="location.href='clientes.html'">
-      <span>👥</span>
+      <span class="nav-icon">&#9744;</span>
       Clientes
     </button>
     <button onclick="location.href='historial.html'">
-      <span>📋</span>
+      <span class="nav-icon">&#9745;</span>
       Pagos
     </button>
     <button onclick="location.href='reportes.html'">
-      <span>📈</span>
+      <span class="nav-icon">&#9633;</span>
       Reportes
     </button>
   </nav>
 
   <div class="modal" id="modalCliente">
     <div class="modal-content">
-      <button class="close" onclick="cerrarModal()">×</button>
-      <h3>📋 Datos del Cliente</h3>
+      <button class="close" onclick="cerrarModal()">&times;</button>
+      <h3>Datos del Cliente</h3>
       <div id="detalleCliente"></div>
-      <h4>📜 Historial de Préstamos</h4>
+      <h4>Historial de Prestamos</h4>
       <div id="historialPrestamosCliente"></div>
     </div>
   </div>
 
   <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <script src="js/prestamos.js"></script>
 
   <script>
+    let clientes = [];
+    let prestamos = [];
+
     window.addEventListener("load", async () => {
-      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
-      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+      clientes = await obtenerClientes();
+      prestamos = await obtenerPrestamos();
       renderTablaClientes();
       setupFiltros();
     });
-
-    function formatearMoneda(num) {
-      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    }
 
     function renderTablaClientes() {
       const tbody = document.getElementById("tablaClientes");
       const buscador = document.getElementById("buscador").value.toLowerCase();
       const filtroEstado = document.getElementById("filtroEstado").value;
-      const clientes = obtenerClientes();
-      const prestamos = obtenerPrestamos();
 
-      let filtered = clientes;
+      let filtered = [...clientes];
 
       if (buscador) {
         filtered = filtered.filter(c =>
@@ -134,10 +127,10 @@
               <strong>${c.nombre}</strong><br>
               <small style="color:var(--gray-500)">${c.matricula || "-"} | ${c.telefono || "-"}</small>
             </td>
-            <td data-label="Préstamos"><strong>${prestamosCliente.length}</strong></td>
+            <td data-label="Prestamos"><strong>${prestamosCliente.length}</strong></td>
             <td data-label="Adeudo">$${formatearMoneda(totalAdeudo)}</td>
             <td data-label="">
-              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html'">+ Préstamo</button>
+              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html'">+ Prestamo</button>
             </td>
           </tr>
         `;
@@ -150,29 +143,29 @@
     }
 
     function verDetalleCliente(id) {
-      const cliente = obtenerClientes().find(c => c.id === id);
-      const prestamos = obtenerPrestamos().filter(p => p.cliente_id === id);
+      const cliente = clientes.find(c => c.id === id);
+      const prestamosCliente = prestamos.filter(p => p.cliente_id === id);
 
       if (!cliente) return;
 
       document.getElementById("detalleCliente").innerHTML = `
-        <p><strong>👤 Nombre:</strong> ${cliente.nombre}</p>
-        <p><strong>📋 Matrícula:</strong> ${cliente.matricula || "N/A"}</p>
-        <p><strong>📞 Teléfono:</strong> ${cliente.telefono || "N/A"}</p>
-        <p><strong>📧 Email:</strong> ${cliente.email || "N/A"}</p>
-        <p><strong>🏠 Dirección:</strong> ${cliente.direccion || "N/A"}</p>
-        <p><strong>📝 Notas:</strong> ${cliente.notas || "N/A"}</p>
-        <p><strong>📅 Registrado:</strong> ${new Date(cliente.created_at).toLocaleDateString("es-MX")}</p>
+        <p><strong>Nombre:</strong> ${cliente.nombre}</p>
+        <p><strong>Matricula:</strong> ${cliente.matricula || "N/A"}</p>
+        <p><strong>Telefono:</strong> ${cliente.telefono || "N/A"}</p>
+        <p><strong>Email:</strong> ${cliente.email || "N/A"}</p>
+        <p><strong>Direccion:</strong> ${cliente.direccion || "N/A"}</p>
+        <p><strong>Notas:</strong> ${cliente.notas || "N/A"}</p>
+        <p><strong>Registrado:</strong> ${new Date(cliente.created_at).toLocaleDateString("es-MX")}</p>
       `;
 
-      document.getElementById("historialPrestamosCliente").innerHTML = prestamos.length
-        ? prestamos.map(p => `
+      document.getElementById("historialPrestamosCliente").innerHTML = prestamosCliente.length
+        ? prestamosCliente.map(p => `
             <div class="historial-item">
-              <p><strong>💵 Monto:</strong> $${formatearMoneda(p.monto_total)} | <strong>Saldo:</strong> $${formatearMoneda(p.saldo_pendiente)}</p>
-              <p><strong>🏷️ Estado:</strong> ${p.estado} | <strong>Pagos:</strong> ${p.pagos_realizados}/${p.total_pagos}</p>
+              <p><strong>Monto:</strong> $${formatearMoneda(p.monto_total)} | <strong>Saldo:</strong> $${formatearMoneda(p.saldo_pendiente)}</p>
+              <p><strong>Estado:</strong> ${p.estado} | <strong>Pagos:</strong> ${p.pagos_realizados}/${p.total_pagos}</p>
             </div>
           `).join("")
-        : "<p class='text-success'>Sin préstamos registrados ✓</p>";
+        : "<p class='text-success'>Sin prestamos registrados</p>";
 
       document.getElementById("modalCliente").className = "modal show";
     }

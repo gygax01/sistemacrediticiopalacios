@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <meta name="theme-color" content="#6366f1">
-  <title>Registrar - Sistema de Préstamos</title>
+  <title>Registrar - Sistema de Prestamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -13,18 +13,27 @@
   <header class="header-brand">
     <div class="brand">
       <h2>Registrar</h2>
-      <p class="brand-sub">Gestión de préstamos</p>
+      <p class="brand-sub">Gestion de prestamos</p>
     </div>
     <div class="header-actions">
-      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+      <button class="btn-sec" onclick="location.href='index.html'">Volver</button>
     </div>
   </header>
 
   <main class="form-container">
     <div class="tabs">
-      <button class="tab active" onclick="showTab('nuevo-cliente')">👤 Cliente</button>
-      <button class="tab" onclick="showTab('nuevo-prestamo')">💰 Préstamo</button>
-      <button class="tab" onclick="showTab('registrar-pago')">💳 Pago</button>
+      <button class="tab active" onclick="showTab('nuevo-cliente')">
+        <span class="tab-icon">+</span>
+        <span class="tab-text">Cliente</span>
+      </button>
+      <button class="tab" onclick="showTab('nuevo-prestamo')">
+        <span class="tab-icon">$</span>
+        <span class="tab-text">Prestamo</span>
+      </button>
+      <button class="tab" onclick="showTab('registrar-pago')">
+        <span class="tab-icon">v</span>
+        <span class="tab-text">Pago</span>
+      </button>
     </div>
 
     <section id="nuevo-cliente" class="tab-content active">
@@ -33,14 +42,14 @@
         <div class="form-grid">
           <div class="form-group">
             <label for="nombre">Nombre completo *</label>
-            <input type="text" id="nombre" required placeholder="Ej: Juan Pérez">
+            <input type="text" id="nombre" required placeholder="Ej: Juan Perez">
           </div>
           <div class="form-group">
-            <label for="matricula">Matrícula / ID</label>
+            <label for="matricula">Matricula / ID</label>
             <input type="text" id="matricula" placeholder="Ej: 2024-001">
           </div>
           <div class="form-group">
-            <label for="telefono">Teléfono</label>
+            <label for="telefono">Telefono</label>
             <input type="tel" id="telefono" placeholder="Ej: 55-1234-5678">
           </div>
           <div class="form-group">
@@ -48,20 +57,20 @@
             <input type="email" id="email" placeholder="correo@ejemplo.com">
           </div>
           <div class="form-group full">
-            <label for="direccion">Dirección</label>
-            <textarea id="direccion" rows="2" placeholder="Dirección completa"></textarea>
+            <label for="direccion">Direccion</label>
+            <textarea id="direccion" rows="2" placeholder="Direccion completa"></textarea>
           </div>
           <div class="form-group full">
             <label for="notas_cliente">Notas</label>
             <textarea id="notas_cliente" rows="2" placeholder="Notas adicionales"></textarea>
           </div>
         </div>
-        <button type="submit" class="btn-primary">💾 Guardar Cliente</button>
+        <button type="submit" class="btn-primary">Guardar Cliente</button>
       </form>
     </section>
 
     <section id="nuevo-prestamo" class="tab-content">
-      <h3>Datos del Préstamo</h3>
+      <h3>Datos del Prestamo</h3>
       <form id="formPrestamo" onsubmit="guardarPrestamo(event)">
         <div class="form-grid">
           <div class="form-group full">
@@ -75,7 +84,7 @@
             <input type="number" id="monto" step="0.01" min="1" required placeholder="1000.00">
           </div>
           <div class="form-group">
-            <label for="tasa_interes">Interés %</label>
+            <label for="tasa_interes">Interes %</label>
             <input type="number" id="tasa_interes" step="0.1" value="0" min="0">
           </div>
           <div class="form-group">
@@ -96,16 +105,16 @@
           </div>
           <div class="form-group full">
             <label for="notas_prestamo">Notas</label>
-            <textarea id="notas_prestamo" rows="2" placeholder="Notas del préstamo"></textarea>
+            <textarea id="notas_prestamo" rows="2" placeholder="Notas del prestamo"></textarea>
           </div>
         </div>
 
         <div id="resumenPrestamo" class="resumen-box" style="display:none;">
-          <h4>📊 Resumen del Préstamo</h4>
+          <h4>Resumen del Prestamo</h4>
           <p>Total a pagar: <strong id="resTotal">$0.00</strong></p>
           <p>Cada pago: <strong id="resPago">$0.00</strong></p>
         </div>
-        <button type="submit" class="btn-primary">💰 Crear Préstamo</button>
+        <button type="submit" class="btn-primary">Crear Prestamo</button>
       </form>
     </section>
 
@@ -114,9 +123,9 @@
       <form id="formPago" onsubmit="registrarPago(event)">
         <div class="form-grid">
           <div class="form-group full">
-            <label for="prestamoSelect">Préstamo *</label>
+            <label for="prestamoSelect">Prestamo *</label>
             <select id="prestamoSelect" required>
-              <option value="">Seleccionar préstamo...</option>
+              <option value="">Seleccionar prestamo...</option>
             </select>
           </div>
           <div class="form-group">
@@ -134,50 +143,48 @@
         </div>
 
         <div id="infoPrestamoPago" class="info-box" style="display:none;">
-          <p><strong>👤 Cliente:</strong> <span id="pagoCliente">-</span></p>
-          <p><strong>💵 Saldo pendiente:</strong> <span id="pagoSaldo">-</span></p>
-          <p><strong>📅 Pagos realizados:</strong> <span id="pagoRealizados">-</span></p>
+          <p><strong>Cliente:</strong> <span id="pagoCliente">-</span></p>
+          <p><strong>Saldo pendiente:</strong> <span id="pagoSaldo">-</span></p>
+          <p><strong>Pagos realizados:</strong> <span id="pagoRealizados">-</span></p>
         </div>
-        <button type="submit" class="btn-primary">✅ Registrar Pago</button>
+        <button type="submit" class="btn-primary">Registrar Pago</button>
       </form>
     </section>
   </main>
 
   <nav class="nav-bottom">
     <button onclick="location.href='index.html'">
-      <span>📊</span>
+      <span class="nav-icon">&#9632;</span>
       Inicio
     </button>
     <button class="active" onclick="location.href='registro.html'">
-      <span>➕</span>
+      <span class="nav-icon">+</span>
       Nuevo
     </button>
     <button onclick="location.href='clientes.html'">
-      <span>👥</span>
+      <span class="nav-icon">&#9744;</span>
       Clientes
     </button>
     <button onclick="location.href='historial.html'">
-      <span>📋</span>
+      <span class="nav-icon">&#9745;</span>
       Pagos
     </button>
     <button onclick="location.href='reportes.html'">
-      <span>📈</span>
+      <span class="nav-icon">&#9633;</span>
       Reportes
     </button>
   </nav>
 
   <script src="js/config.js"></script>
-  <script src="js/supabase.js"></script>
   <script src="js/storage.js"></script>
-  <script src="js/clientes.js"></script>
-  <script src="js/prestamos.js"></script>
-  <script src="js/pagos.js"></script>
 
   <script>
+    let clientes = [];
+    let prestamos = [];
+
     window.addEventListener("load", async () => {
-      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
-      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
-      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+      clientes = await obtenerClientes();
+      prestamos = await obtenerPrestamos();
 
       poblarSelectClientes();
       poblarSelectPrestamos();
@@ -202,16 +209,14 @@
 
     function poblarSelectClientes() {
       const select = document.getElementById("clienteSelect");
-      const clientes = obtenerClientes();
       select.innerHTML = '<option value="">Seleccionar cliente...</option>' +
         clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.matricula ? `(${c.matricula})` : ""}</option>`).join("");
     }
 
     function poblarSelectPrestamos() {
       const select = document.getElementById("prestamoSelect");
-      const prestamos = obtenerPrestamos().filter(p => p.estado !== "pagado");
-      const clientes = obtenerClientes();
-      select.innerHTML = '<option value="">Seleccionar préstamo...</option>' +
+      prestamos = prestamos.filter(p => p.estado !== "pagado");
+      select.innerHTML = '<option value="">Seleccionar prestamo...</option>' +
         prestamos.map(p => {
           const cliente = clientes.find(c => c.id === p.cliente_id);
           return `<option value="${p.id}">${cliente?.nombre || "N/A"} - $${formatearMoneda(p.saldo_pendiente)}</option>`;
@@ -222,10 +227,6 @@
       const hoy = new Date().toISOString().split("T")[0];
       document.getElementById("fechaInicio").value = hoy;
       document.getElementById("fechaPago").value = hoy;
-    }
-
-    function formatearMoneda(num) {
-      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     }
 
     function calcularMontoPago() {
@@ -276,10 +277,15 @@
         created_at: new Date().toISOString()
       };
 
-      await guardarClienteLocal(cliente);
-      e.target.reset();
-      poblarSelectClientes();
-      mostrarNotificacion("Cliente guardado exitosamente", "success");
+      const result = await guardarCliente(cliente);
+      if (result) {
+        clientes = await obtenerClientes();
+        e.target.reset();
+        poblarSelectClientes();
+        mostrarNotificacion("Cliente guardado exitosamente", "success");
+      } else {
+        mostrarNotificacion("Error al guardar cliente", "error");
+      }
     }
 
     async function guardarPrestamo(e) {
@@ -320,12 +326,17 @@
         created_at: new Date().toISOString()
       };
 
-      await guardarPrestamoLocal(prestamo);
-      e.target.reset();
-      establecerFechaActual();
-      calcularMontoPago();
-      poblarSelectPrestamos();
-      mostrarNotificacion("Préstamo creado exitosamente", "success");
+      const result = await guardarPrestamo(prestamo);
+      if (result) {
+        prestamos = await obtenerPrestamos();
+        e.target.reset();
+        establecerFechaActual();
+        calcularMontoPago();
+        poblarSelectPrestamos();
+        mostrarNotificacion("Prestamo creado exitosamente", "success");
+      } else {
+        mostrarNotificacion("Error al crear prestamo", "error");
+      }
     }
 
     document.getElementById("prestamoSelect").addEventListener("change", actualizarInfoPrestamoPago);
@@ -339,10 +350,10 @@
         return;
       }
 
-      const prestamo = obtenerPrestamos().find(p => p.id === prestamoId);
+      const prestamo = prestamos.find(p => p.id === prestamoId);
       if (!prestamo) return;
 
-      const cliente = obtenerClientes().find(c => c.id === prestamo.cliente_id);
+      const cliente = clientes.find(c => c.id === prestamo.cliente_id);
 
       document.getElementById("pagoCliente").textContent = cliente?.nombre || "N/A";
       document.getElementById("pagoSaldo").textContent = `$${formatearMoneda(prestamo.saldo_pendiente)}`;
@@ -354,18 +365,16 @@
     async function registrarPago(e) {
       e.preventDefault();
       
-      if (typeof ensurePagosCargados === "function") {
-        await ensurePagosCargados();
-      }
-
+      prestamos = await obtenerPrestamos();
+      
       const prestamoId = document.getElementById("prestamoSelect").value;
       const monto = parseFloat(document.getElementById("montoPagoInput").value);
       const fechaPago = document.getElementById("fechaPago").value;
       const nota = document.getElementById("notaPago").value.trim();
 
-      const prestamo = obtenerPrestamos().find(p => p.id === prestamoId);
+      const prestamo = prestamos.find(p => p.id === prestamoId);
       if (!prestamo) {
-        mostrarNotificacion("Seleccione un préstamo válido", "error");
+        mostrarNotificacion("Seleccione un prestamo valido", "error");
         return;
       }
 
@@ -380,13 +389,17 @@
         created_at: new Date().toISOString()
       };
 
-      await guardarPagoLocal(pago);
+      const pagoResult = await guardarPago(pago);
+      if (!pagoResult) {
+        mostrarNotificacion("Error al registrar pago", "error");
+        return;
+      }
 
       const nuevoSaldo = Math.max(0, prestamo.saldo_pendiente - monto);
       const nuevosPagos = (prestamo.pagos_realizados || 0) + 1;
       const nuevoEstado = nuevosPagos >= prestamo.total_pagos ? "pagado" : "activo";
 
-      await actualizarPrestamoLocal(prestamoId, {
+      await actualizarPrestamo(prestamoId, {
         saldo_pendiente: nuevoSaldo,
         pagos_realizados: nuevosPagos,
         estado: nuevoEstado,
@@ -396,10 +409,11 @@
 
       e.target.reset();
       establecerFechaActual();
+      prestamos = await obtenerPrestamos();
       poblarSelectPrestamos();
       
       if (nuevoEstado === "pagado") {
-        mostrarNotificacion("¡Préstamo liquidado completamente!", "success");
+        mostrarNotificacion("Prestamo liquidado completamente!", "success");
       } else {
         mostrarNotificacion(`Pago de $${formatearMoneda(monto)} registrado. Saldo: $${formatearMoneda(nuevoSaldo)}`, "success");
       }
