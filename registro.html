@@ -71,7 +71,7 @@
 
     <section id="nuevo-prestamo" class="tab-content">
       <h3>Datos del Prestamo</h3>
-      <form id="formPrestamo" onsubmit="guardarPrestamo(event)">
+      <form id="formPrestamo" onsubmit="guardarPrestamoForm(event)">
         <div class="form-grid">
           <div class="form-group full">
             <label for="clienteSelect">Cliente *</label>
@@ -120,7 +120,7 @@
 
     <section id="registrar-pago" class="tab-content">
       <h3>Registrar Pago / Abono</h3>
-      <form id="formPago" onsubmit="registrarPago(event)">
+      <form id="formPago" onsubmit="registrarPagoForm(event)">
         <div class="form-grid">
           <div class="form-group full">
             <label for="prestamoSelect">Prestamo *</label>
@@ -235,22 +235,33 @@ window.addEventListener("load", async () => {
     }
 
     function calcularMontoPago() {
-      const monto = parseFloat(document.getElementById("monto").value) || 0;
-      const tasa = parseFloat(document.getElementById("tasa_interes").value) || 0;
-      const numPagos = parseInt(document.getElementById("totalPagos").value) || 1;
+      const montoEl = document.getElementById("monto");
+      if (!montoEl) return;
+      
+      const monto = parseFloat(montoEl.value) || 0;
+      const tasaEl = document.getElementById("tasa_interes");
+      const numPagosEl = document.getElementById("totalPagos");
+      
+      if (!tasaEl || !numPagosEl) return;
+      
+      const tasa = parseFloat(tasaEl.value) || 0;
+      const numPagos = parseInt(numPagosEl.value) || 1;
 
       const total = monto + (monto * tasa / 100);
       const pago = total / numPagos;
 
-      document.getElementById("montoPago").value = pago.toFixed(2);
+      const montoPagoEl = document.getElementById("montoPago");
+      if (montoPagoEl) montoPagoEl.value = pago.toFixed(2);
 
       const resumen = document.getElementById("resumenPrestamo");
       if (monto > 0) {
-        document.getElementById("resTotal").textContent = `$${formatearMoneda(total)}`;
-        document.getElementById("resPago").textContent = `$${formatearMoneda(pago)}`;
-        resumen.style.display = "block";
+        const resTotal = document.getElementById("resTotal");
+        const resPago = document.getElementById("resPago");
+        if (resTotal) resTotal.textContent = `$${formatearMoneda(total)}`;
+        if (resPago) resPago.textContent = `$${formatearMoneda(pago)}`;
+        if (resumen) resumen.style.display = "block";
       } else {
-        resumen.style.display = "none";
+        if (resumen) resumen.style.display = "none";
       }
     }
 
@@ -304,8 +315,10 @@ window.addEventListener("load", async () => {
       }
     }
 
-    async function guardarPrestamo(e) {
+    async function guardarPrestamoForm(e) {
       e.preventDefault();
+      console.log("[DEBUG] guardarPrestamoForm llamado");
+      
       const clienteId = document.getElementById("clienteSelect").value;
       if (!clienteId) {
         mostrarNotificacion("Seleccione un cliente", "error");
@@ -342,7 +355,10 @@ window.addEventListener("load", async () => {
         created_at: new Date().toISOString()
       };
 
+      console.log("[DEBUG] guardando prestamo...", prestamo);
       const result = await guardarPrestamo(prestamo);
+      console.log("[DEBUG] resultado:", result);
+      
       if (result) {
         prestamos = await obtenerPrestamos();
         e.target.reset();
@@ -378,8 +394,9 @@ window.addEventListener("load", async () => {
       infoBox.style.display = "block";
     }
 
-    async function registrarPago(e) {
+    async function registrarPagoForm(e) {
       e.preventDefault();
+      console.log("[DEBUG] registrarPagoForm llamado");
       
       prestamos = await obtenerPrestamos();
       
@@ -405,7 +422,10 @@ window.addEventListener("load", async () => {
         created_at: new Date().toISOString()
       };
 
+      console.log("[DEBUG] guardando pago...", pago);
       const pagoResult = await guardarPago(pago);
+      console.log("[DEBUG] resultado:", pagoResult);
+      
       if (!pagoResult) {
         mostrarNotificacion("Error al registrar pago", "error");
         return;
