@@ -358,10 +358,10 @@ body {
 
 /* ===== PANEL ACCIONES ===== */
 .panel-acciones {
-  padding: 16px 20px;
+  padding: 18px 24px;
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 14px;
   justify-content: flex-start;
   background: rgba(255,255,255,0.95);
   backdrop-filter: blur(12px);
@@ -410,6 +410,7 @@ body {
   flex-direction: column;
   gap: 12px;
   background: rgba(255,255,255,0.85);
+  margin-bottom: 12px;
 }
 
 .filtros input,
@@ -421,6 +422,7 @@ body {
   width: 100%;
   background: white;
   transition: all 0.2s;
+  min-height: 50px;
 }
 
 .filtros input:focus,
@@ -441,6 +443,7 @@ body {
   max-height: calc(100vh - 420px);
   max-height: calc(100dvh - 420px);
   box-shadow: inset 0 1px 0 var(--gray-200);
+  padding-bottom: 80px;
 }
 
 table { width: 100%; border-collapse: collapse; min-width: 650px; }
@@ -477,6 +480,8 @@ tbody tr {
   border-bottom: 1px solid var(--gray-200);
   transition: background 0.2s;
   cursor: pointer;
+  padding: 16px 20px;
+  gap: 10px;
 }
 
 tbody tr:hover { background: var(--primary-soft); }
@@ -485,27 +490,53 @@ tbody td {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 14px 20px;
-  border: none;
+  padding: 0 !important;
+  border: none !important;
+  gap: 12px;
 }
 
 tbody td::before {
   content: attr(data-label);
   font-weight: 600;
   color: var(--gray-500);
-  font-size: 0.72rem;
+  font-size: 0.7rem;
   text-transform: uppercase;
+  flex-shrink: 0;
 }
 
 tbody td:last-child {
   display: flex;
   gap: 8px;
   justify-content: flex-end;
+  margin-top: 8px;
+  padding-top: 10px;
+  border-top: 1px solid var(--gray-200) !important;
 }
 
 tbody td:last-child::before { display: none; }
 
 tbody tr:hover td:first-child { color: var(--primary); }
+
+tbody td[data-label="Cliente"] {
+  flex-direction: column;
+  align-items: flex-start !important;
+  gap: 4px;
+}
+
+tbody td[data-label="Cliente"] strong {
+  font-size: 1rem;
+}
+
+tbody td[data-label="Cliente"] small {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+}
+
+tbody td[data-label="Saldo"] strong {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: var(--gray-900);
+}
 
 /* ===== BADGES ===== */
 .badge {
