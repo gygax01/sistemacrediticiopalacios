@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#3b82f6">
+  <title>Registrar - Sistema de Préstamos</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <header class="header-brand">
+    <div class="brand">
+      <h2>Registrar</h2>
+      <p class="brand-sub">Préstamos y clientes</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+    </div>
+  </header>
+
+  <main class="form-container">
+    <div class="tabs">
+      <button class="tab active" onclick="showTab('nuevo-cliente')">👤 Cliente</button>
+      <button class="tab" onclick="showTab('nuevo-prestamo')">💰 Préstamo</button>
+      <button class="tab" onclick="showTab('registrar-pago')">💳 Pago</button>
+    </div>
+
+    <section id="nuevo-cliente" class="tab-content active">
+      <h3>Datos del Cliente</h3>
+      <form id="formCliente" onsubmit="guardarCliente(event)">
+        <div class="form-grid">
+          <div class="form-group">
+            <label for="nombre">Nombre completo *</label>
+            <input type="text" id="nombre" required placeholder="Ej: Juan Pérez">
+          </div>
+          <div class="form-group">
+            <label for="matricula">Matrícula / ID</label>
+            <input type="text" id="matricula" placeholder="Ej: 2024-001">
+          </div>
+          <div class="form-group">
+            <label for="telefono">Teléfono</label>
+            <input type="tel" id="telefono" placeholder="Ej: 55-1234-5678">
+          </div>
+          <div class="form-group">
+            <label for="email">Correo</label>
+            <input type="email" id="email" placeholder="Ej: correo@ejemplo.com">
+          </div>
+          <div class="form-group full">
+            <label for="direccion">Dirección</label>
+            <textarea id="direccion" rows="2" placeholder="Dirección completa"></textarea>
+          </div>
+          <div class="form-group full">
+            <label for="notas_cliente">Notas</label>
+            <textarea id="notas_cliente" rows="2" placeholder="Notas adicionales"></textarea>
+          </div>
+        </div>
+        <button type="submit" class="btn-primary">Guardar Cliente</button>
+      </form>
+    </section>
+
+    <section id="nuevo-prestamo" class="tab-content">
+      <h3>Datos del Préstamo</h3>
+      <form id="formPrestamo" onsubmit="guardarPrestamo(event)">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="clienteSelect">Cliente *</label>
+            <select id="clienteSelect" required>
+              <option value="">Seleccionar cliente...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="monto">Monto total $ *</label>
+            <input type="number" id="monto" step="0.01" min="1" required placeholder="1000.00">
+          </div>
+          <div class="form-group">
+            <label for="tasa_interes">Interés %</label>
+            <input type="number" id="tasa_interes" step="0.1" value="0" min="0">
+          </div>
+          <div class="form-group">
+            <label for="totalPagos">No. de pagos</label>
+            <input type="number" id="totalPagos" min="1" value="1">
+          </div>
+          <div class="form-group">
+            <label for="fechaInicio">Fecha inicio *</label>
+            <input type="date" id="fechaInicio" required>
+          </div>
+          <div class="form-group">
+            <label for="frecuencia">Frecuencia</label>
+            <select id="frecuencia">
+              <option value="semanal">Semanal</option>
+              <option value="quincenal">Quincenal</option>
+              <option value="mensual" selected>Mensual</option>
+            </select>
+          </div>
+          <div class="form-group full">
+            <label for="notas_prestamo">Notas</label>
+            <textarea id="notas_prestamo" rows="2" placeholder="Notas del préstamo"></textarea>
+          </div>
+        </div>
+
+        <div id="resumenPrestamo" class="resumen-box" style="display:none;">
+          <h4>Resumen</h4>
+          <p>Total: <strong id="resTotal">$0.00</strong></p>
+          <p>Cada pago: <strong id="resPago">$0.00</strong></p>
+        </div>
+        <button type="submit" class="btn-primary">Crear Préstamo</button>
+      </form>
+    </section>
+
+    <section id="registrar-pago" class="tab-content">
+      <h3>Registrar Pago</h3>
+      <form id="formPago" onsubmit="registrarPago(event)">
+        <div class="form-grid">
+          <div class="form-group full">
+            <label for="prestamoSelect">Préstamo *</label>
+            <select id="prestamoSelect" required>
+              <option value="">Seleccionar préstamo...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="montoPagoInput">Monto $ *</label>
+            <input type="number" id="montoPagoInput" step="0.01" min="1" required>
+          </div>
+          <div class="form-group">
+            <label for="fechaPago">Fecha *</label>
+            <input type="date" id="fechaPago" required>
+          </div>
+          <div class="form-group full">
+            <label for="notaPago">Nota / Referencia</label>
+            <input type="text" id="notaPago" placeholder="Ej: Pago parcial">
+          </div>
+        </div>
+
+        <div id="infoPrestamoPago" class="info-box" style="display:none;">
+          <p><strong>Cliente:</strong> <span id="pagoCliente">-</span></p>
+          <p><strong>Saldo:</strong> <span id="pagoSaldo">-</span></p>
+        </div>
+        <button type="submit" class="btn-primary">Registrar Pago</button>
+      </form>
+    </section>
+  </main>
+
+  <nav class="nav-bottom">
+    <button onclick="location.href='index.html'">
+      <span>📊</span>
+      Inicio
+    </button>
+    <button class="active" onclick="location.href='registro.html'">
+      <span>➕</span>
+      Nuevo
+    </button>
+    <button onclick="location.href='clientes.html'">
+      <span>👥</span>
+      Clientes
+    </button>
+    <button onclick="location.href='historial.html'">
+      <span>📋</span>
+      Pagos
+    </button>
+    <button onclick="location.href='reportes.html'">
+      <span>📈</span>
+      Reportes
+    </button>
+  </nav>
+
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/clientes.js"></script>
+  <script src="js/prestamos.js"></script>
+  <script src="js/pagos.js"></script>
+
+  <script>
+    window.addEventListener("load", async () => {
+      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
+      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
+
+      poblarSelectClientes();
+      poblarSelectPrestamos();
+      establecerFechaActual();
+      calcularMontoPago();
+
+      const params = new URLSearchParams(window.location.search);
+      const prestamoId = params.get("prestamo");
+      if (prestamoId) {
+        showTab("registrar-pago");
+        document.getElementById("prestamoSelect").value = prestamoId;
+        actualizarInfoPrestamoPago();
+      }
+    });
+
+    function showTab(tabId) {
+      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+      document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
+      document.querySelector(`.tab[onclick="showTab('${tabId}')"]`).classList.add("active");
+      document.getElementById(tabId).classList.add("active");
+    }
+
+    function poblarSelectClientes() {
+      const select = document.getElementById("clienteSelect");
+      const clientes = obtenerClientes();
+      select.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+        clientes.map(c => `<option value="${c.id}">${c.nombre} ${c.matricula ? `(${c.matricula})` : ""}</option>`).join("");
+    }
+
+    function poblarSelectPrestamos() {
+      const select = document.getElementById("prestamoSelect");
+      const prestamos = obtenerPrestamos().filter(p => p.estado !== "pagado");
+      const clientes = obtenerClientes();
+      select.innerHTML = '<option value="">Seleccionar préstamo...</option>' +
+        prestamos.map(p => {
+          const cliente = clientes.find(c => c.id === p.cliente_id);
+          return `<option value="${p.id}">${cliente?.nombre || "N/A"} - $${formatearMoneda(p.saldo_pendiente)}</option>`;
+        }).join("");
+    }
+
+    function establecerFechaActual() {
+      const hoy = new Date().toISOString().split("T")[0];
+      document.getElementById("fechaInicio").value = hoy;
+      document.getElementById("fechaPago").value = hoy;
+    }
+
+    function formatearMoneda(num) {
+      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function calcularMontoPago() {
+      const monto = parseFloat(document.getElementById("monto").value) || 0;
+      const tasa = parseFloat(document.getElementById("tasa_interes").value) || 0;
+      const numPagos = parseInt(document.getElementById("totalPagos").value) || 1;
+
+      const total = monto + (monto * tasa / 100);
+      const pago = total / numPagos;
+
+      document.getElementById("montoPago").value = pago.toFixed(2);
+
+      const resumen = document.getElementById("resumenPrestamo");
+      if (monto > 0) {
+        document.getElementById("resTotal").textContent = `$${formatearMoneda(total)}`;
+        document.getElementById("resPago").textContent = `$${formatearMoneda(pago)}`;
+        resumen.style.display = "block";
+      } else {
+        resumen.style.display = "none";
+      }
+    }
+
+    document.getElementById("monto").addEventListener("input", calcularMontoPago);
+    document.getElementById("tasa_interes").addEventListener("input", calcularMontoPago);
+    document.getElementById("totalPagos").addEventListener("input", calcularMontoPago);
+
+    function calcularFechaProximoPago(fechaInicio, frecuencia) {
+      const fecha = new Date(fechaInicio);
+      const hoy = new Date();
+      while (fecha <= hoy) {
+        if (frecuencia === "semanal") fecha.setDate(fecha.getDate() + 7);
+        else if (frecuencia === "quincenal") fecha.setDate(fecha.getDate() + 15);
+        else fecha.setMonth(fecha.getMonth() + 1);
+      }
+      return fecha.toISOString().split("T")[0];
+    }
+
+    async function guardarCliente(e) {
+      e.preventDefault();
+      const cliente = {
+        id: crypto.randomUUID(),
+        nombre: document.getElementById("nombre").value.trim(),
+        matricula: document.getElementById("matricula").value.trim(),
+        telefono: document.getElementById("telefono").value.trim(),
+        email: document.getElementById("email").value.trim(),
+        direccion: document.getElementById("direccion").value.trim(),
+        notas: document.getElementById("notas_cliente").value.trim(),
+        created_at: new Date().toISOString()
+      };
+
+      await guardarClienteLocal(cliente);
+      e.target.reset();
+      poblarSelectClientes();
+      alert("Cliente guardado exitosamente");
+    }
+
+    async function guardarPrestamo(e) {
+      e.preventDefault();
+      const clienteId = document.getElementById("clienteSelect").value;
+      if (!clienteId) { alert("Seleccione un cliente"); return; }
+
+      const monto = parseFloat(document.getElementById("monto").value);
+      const tasa = parseFloat(document.getElementById("tasa_interes").value) || 0;
+      const numPagos = parseInt(document.getElementById("totalPagos").value) || 1;
+      const fechaInicio = document.getElementById("fechaInicio").value;
+      const frecuencia = document.getElementById("frecuencia").value;
+      const notas = document.getElementById("notas_prestamo").value.trim();
+
+      const interes = monto * (tasa / 100);
+      const total = monto + interes;
+      const montoPago = total / numPagos;
+
+      const prestamo = {
+        id: crypto.randomUUID(),
+        cliente_id: clienteId,
+        monto_total: monto,
+        tasa_interes: tasa,
+        interes_total: interes,
+        total_pagar: total,
+        saldo_pendiente: total,
+        total_pagos: numPagos,
+        pagos_realizados: 0,
+        fecha_inicio: fechaInicio,
+        fecha_proximo_pago: calcularFechaProximoPago(fechaInicio, frecuencia),
+        frecuencia_pago: frecuencia,
+        monto_pago: montoPago,
+        estado: "activo",
+        notas: notas,
+        created_at: new Date().toISOString()
+      };
+
+      await guardarPrestamoLocal(prestamo);
+      e.target.reset();
+      establecerFechaActual();
+      calcularMontoPago();
+      poblarSelectPrestamos();
+      alert("Préstamo creado exitosamente");
+    }
+
+    document.getElementById("prestamoSelect").addEventListener("change", actualizarInfoPrestamoPago);
+
+    function actualizarInfoPrestamoPago() {
+      const prestamoId = document.getElementById("prestamoSelect").value;
+      const infoBox = document.getElementById("infoPrestamoPago");
+
+      if (!prestamoId) { infoBox.style.display = "none"; return; }
+
+      const prestamo = obtenerPrestamos().find(p => p.id === prestamoId);
+      if (!prestamo) return;
+
+      const cliente = obtenerClientes().find(c => c.id === prestamo.cliente_id);
+
+      document.getElementById("pagoCliente").textContent = cliente?.nombre || "N/A";
+      document.getElementById("pagoSaldo").textContent = `$${formatearMoneda(prestamo.saldo_pendiente)}`;
+      document.getElementById("montoPagoInput").value = prestamo.monto_pago.toFixed(2);
+      infoBox.style.display = "block";
+    }
+
+    async function registrarPago(e) {
+      e.preventDefault();
+      const prestamoId = document.getElementById("prestamoSelect").value;
+      const monto = parseFloat(document.getElementById("montoPagoInput").value);
+      const fechaPago = document.getElementById("fechaPago").value;
+      const nota = document.getElementById("notaPago").value.trim();
+
+      const prestamo = obtenerPrestamos().find(p => p.id === prestamoId);
+      if (!prestamo) { alert("Seleccione un préstamo válido"); return; }
+
+      const pago = {
+        id: crypto.randomUUID(),
+        prestamo_id: prestamoId,
+        cliente_id: prestamo.cliente_id,
+        monto: monto,
+        fecha_pago: fechaPago,
+        nota: nota,
+        estado: "confirmado",
+        created_at: new Date().toISOString()
+      };
+
+      await guardarPagoLocal(pago);
+
+      const nuevoSaldo = Math.max(0, prestamo.saldo_pendiente - monto);
+      const nuevosPagos = prestamo.pagos_realizados + 1;
+      const nuevoEstado = nuevosPagos >= prestamo.total_pagos ? "pagado" : "activo";
+
+      await actualizarPrestamoLocal(prestamoId, {
+        saldo_pendiente: nuevoSaldo,
+        pagos_realizados: nuevosPagos,
+        estado: nuevoEstado,
+        fecha_ultimo_pago: fechaPago,
+        fecha_proximo_pago: nuevoEstado === "activo" ? calcularFechaProximoPago(fechaPago, prestamo.frecuencia_pago) : null
+      });
+
+      e.target.reset();
+      establecerFechaActual();
+      poblarSelectPrestamos();
+      alert(`Pago registrado: $${formatearMoneda(monto)}\nNuevo saldo: $${formatearMoneda(nuevoSaldo)}`);
+    }
+  </script>
+</body>
+</html>

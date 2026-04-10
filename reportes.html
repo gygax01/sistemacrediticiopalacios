@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#3b82f6">
+  <title>Reportes - Sistema de Préstamos</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <header class="header-brand">
+    <div class="brand">
+      <h2>Reportes</h2>
+      <p class="brand-sub">Estadísticas y exportaciones</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-sec" onclick="location.href='index.html'">← Volver</button>
+    </div>
+  </header>
+
+  <main class="reportes-container">
+    <article class="reporte-card">
+      <h3>📊 Resumen General</h3>
+      <div id="resumenGeneral"></div>
+      <button class="btn-primary" onclick="descargarResumenGeneral()">Descargar CSV</button>
+    </article>
+
+    <article class="reporte-card">
+      <h3>⚠️ Préstamos Atrasados</h3>
+      <div id="prestamosAtrasados"></div>
+      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">Descargar Lista</button>
+    </article>
+
+    <article class="reporte-card">
+      <h3>💰 Estado de Cuenta</h3>
+      <select id="clienteReporte">
+        <option value="todos">Todos los clientes</option>
+      </select>
+      <div id="estadoCuentaCliente"></div>
+      <button class="btn-primary" onclick="descargarEstadoCuenta()">Descargar</button>
+    </article>
+
+    <article class="reporte-card">
+      <h3>📈 Flujo de Efectivo</h3>
+      <div id="flujoEfectivo"></div>
+      <button class="btn-primary" onclick="descargarFlujoEfectivo()">Descargar CSV</button>
+    </article>
+  </main>
+
+  <nav class="nav-bottom">
+    <button onclick="location.href='index.html'">
+      <span>📊</span>
+      Inicio
+    </button>
+    <button onclick="location.href='registro.html'">
+      <span>➕</span>
+      Nuevo
+    </button>
+    <button onclick="location.href='clientes.html'">
+      <span>👥</span>
+      Clientes
+    </button>
+    <button onclick="location.href='historial.html'">
+      <span>📋</span>
+      Pagos
+    </button>
+    <button class="active" onclick="location.href='reportes.html'">
+      <span>📈</span>
+      Reportes
+    </button>
+  </nav>
+
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/clientes.js"></script>
+  <script src="js/prestamos.js"></script>
+  <script src="js/pagos.js"></script>
+  <script src="js/reportes.js"></script>
+
+  <script>
+    window.addEventListener("load", async () => {
+      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
+      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
+      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
+
+      poblarSelectClientesReporte();
+      renderResumenGeneral();
+      renderPrestamosAtrasados();
+      renderEstadoCuentaCliente();
+      renderFlujoEfectivo();
+    });
+
+    function formatearMoneda(num) {
+      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function poblarSelectClientesReporte() {
+      const select = document.getElementById("clienteReporte");
+      const clientes = obtenerClientes();
+      select.innerHTML = '<option value="todos">Todos</option>' +
+        clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join("");
+      select.addEventListener("change", renderEstadoCuentaCliente);
+    }
+
+    function renderResumenGeneral() {
+      const prestamos = obtenerPrestamos();
+      const clientes = obtenerClientes();
+      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
+
+      const activos = prestamos.filter(p => p.estado === "activo");
+      const pagados = prestamos.filter(p => p.estado === "pagado");
+      const hoy = new Date().toISOString().split("T")[0];
+      const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
+
+      const totalPrestado = prestamos.reduce((sum, p) => sum + (p.monto_total || 0), 0);
+      const totalCobrado = pagos.reduce((sum, p) => sum + (p.monto || 0), 0);
+      const totalPendiente = activos.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
+
+      document.getElementById("resumenGeneral").innerHTML = `
+        <div class="stat-row"><span>Total préstamos:</span><strong>${prestamos.length}</strong></div>
+        <div class="stat-row"><span>Activos:</span><strong>${activos.length}</strong></div>
+        <div class="stat-row"><span>Pagados:</span><strong>${pagados.length}</strong></div>
+        <div class="stat-row"><span>Atrasados:</span><strong class="text-danger">${atrasados.length}</strong></div>
+        <div class="stat-row"><span>Clientes:</span><strong>${clientes.length}</strong></div>
+        <div class="stat-row"><span>Total prestado:</span><strong>$${formatearMoneda(totalPrestado)}</strong></div>
+        <div class="stat-row"><span>Total cobrado:</span><strong class="text-success">$${formatearMoneda(totalCobrado)}</strong></div>
+        <div class="stat-row"><span>Total pendiente:</span><strong>$${formatearMoneda(totalPendiente)}</strong></div>
+      `;
+    }
+
+    function renderPrestamosAtrasados() {
+      const hoy = new Date().toISOString().split("T")[0];
+      const atrasados = obtenerPrestamos().filter(p =>
+        p.estado !== "pagado" && p.fecha_proximo_pago && p.fecha_proximo_pago < hoy
+      );
+      const clientes = obtenerClientes();
+
+      const diasAtraso = (fecha) => Math.floor((new Date() - new Date(fecha)) / (1000 * 60 * 60 * 24));
+
+      document.getElementById("prestamosAtrasados").innerHTML = atrasados.length
+        ? atrasados.map(p => {
+            const cliente = clientes.find(c => c.id === p.cliente_id);
+            const dias = diasAtraso(p.fecha_proximo_pago);
+            return `
+              <div class="prestamo-atrasado">
+                <strong>${cliente?.nombre || "N/A"}</strong>
+                <span>Días: <strong class="text-danger">${dias}</strong></span>
+                <span>Saldo: <strong>$${formatearMoneda(p.saldo_pendiente)}</strong></span>
+              </div>
+            `;
+          }).join("")
+        : "<p class='text-success'>✓ Sin préstamos atrasados</p>";
+    }
+
+    function renderEstadoCuentaCliente() {
+      const clienteId = document.getElementById("clienteReporte").value;
+      const clientes = obtenerClientes();
+      const prestamos = obtenerPrestamos();
+      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
+
+      let filtered = [];
+
+      if (clienteId === "todos") {
+        filtered = clientes.map(c => {
+          const prests = prestamos.filter(p => p.cliente_id === c.id);
+          const ps = pagos.filter(p => p.cliente_id === c.id);
+          return {
+            cliente: c,
+            totalPrestado: prests.reduce((s, p) => s + (p.monto_total || 0), 0),
+            totalPagado: ps.reduce((s, p) => s + (p.monto || 0), 0),
+            saldoPendiente: prests.filter(p => p.estado !== "pagado").reduce((s, p) => s + (p.saldo_pendiente || 0), 0)
+          };
+        });
+      } else {
+        const cliente = clientes.find(c => c.id === clienteId);
+        if (cliente) {
+          const prests = prestamos.filter(p => p.cliente_id === clienteId);
+          const ps = pagos.filter(p => p.cliente_id === clienteId);
+          filtered = [{
+            cliente,
+            totalPrestado: prests.reduce((s, p) => s + (p.monto_total || 0), 0),
+            totalPagado: ps.reduce((s, p) => s + (p.monto || 0), 0),
+            saldoPendiente: prests.filter(p => p.estado !== "pagado").reduce((s, p) => s + (p.saldo_pendiente || 0), 0)
+          }];
+        }
+      }
+
+      document.getElementById("estadoCuentaCliente").innerHTML = filtered.length
+        ? filtered.map(r => `
+            <div class="cliente-resumen">
+              <strong>${r.cliente.nombre}</strong>
+              <div class="stat-row"><span>Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
+              <div class="stat-row"><span>Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
+              <div class="stat-row"><span>Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>
+            </div>
+          `).join("")
+        : "<p>Sin datos</p>";
+    }
+
+    function renderFlujoEfectivo() {
+      const pagos = obtenerPagos().filter(p => p.estado === "confirmado");
+      const meses = {};
+
+      pagos.forEach(p => {
+        const fecha = new Date(p.fecha_pago);
+        const key = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, "0")}`;
+        meses[key] = (meses[key] || 0) + (p.monto || 0);
+      });
+
+      const sortedKeys = Object.keys(meses).sort().reverse().slice(0, 6);
+      document.getElementById("flujoEfectivo").innerHTML = sortedKeys.length
+        ? sortedKeys.map(k => {
+            const [year, month] = k.split("-");
+            const fecha = new Date(year, parseInt(month) - 1);
+            const nombreMes = fecha.toLocaleDateString("es-MX", { month: "short", year: "numeric" });
+            return `<div class="stat-row"><span>${nombreMes}</span><strong>$${formatearMoneda(meses[k])}</strong></div>`;
+          }).join("")
+        : "<p>Sin datos de pagos</p>";
+    }
+
+    async function descargarResumenGeneral() {
+      if (typeof generarReporteResumenGeneralCsv === "function") await generarReporteResumenGeneralCsv();
+    }
+
+    async function descargarEstadoCuenta() {
+      if (typeof generarReporteEstadoCuentaCsv === "function") await generarReporteEstadoCuentaCsv();
+    }
+
+    async function descargarPrestamosAtrasados() {
+      if (typeof generarReporteAtrasadosCsv === "function") await generarReporteAtrasadosCsv();
+    }
+
+    async function descargarFlujoEfectivo() {
+      if (typeof generarReporteFlujoEfectivoCsv === "function") await generarReporteFlujoEfectivoCsv();
+    }
+  </script>
+</body>
+</html>

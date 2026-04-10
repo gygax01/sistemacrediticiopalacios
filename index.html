@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="theme-color" content="#3b82f6">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <title>Préstamos - Dashboard</title>
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+
+<body>
+  <header class="header-brand">
+    <div class="brand">
+      <h2>Préstamos</h2>
+      <p class="brand-sub">Sistema de Gestión</p>
+    </div>
+
+    <div class="header-actions">
+      <span id="totalAdeudo" class="stat-pill is-red">$0.00</span>
+      <span id="estadoConexion" class="lector off">Offline</span>
+    </div>
+  </header>
+
+  <section class="dashboard-grid">
+    <article class="stat-card is-orange">
+      <h3>Activos</h3>
+      <p id="dashPrestamosActivos">0</p>
+    </article>
+    <article class="stat-card is-green">
+      <h3>Clientes</h3>
+      <p id="dashClientes">0</p>
+    </article>
+    <article class="stat-card">
+      <h3>Pagos mes</h3>
+      <p id="dashPagosMes">0</p>
+    </article>
+    <article class="stat-card is-red">
+      <h3>Atrasados</h3>
+      <p id="dashAtrasados">0</p>
+    </article>
+  </section>
+
+  <div class="filtros">
+    <input type="text" id="buscador" placeholder="Buscar cliente...">
+    <select id="filtroEstado">
+      <option value="todos">Todos</option>
+      <option value="activo">Activos</option>
+      <option value="pagado">Pagados</option>
+      <option value="atrasado">Atrasados</option>
+    </select>
+  </div>
+
+  <div id="contenedorTabla" class="table-shell">
+    <table>
+      <thead>
+        <tr>
+          <th>Cliente</th>
+          <th>Saldo</th>
+          <th>Pagos</th>
+          <th>Estado</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="tablaPrestamos"></tbody>
+    </table>
+  </div>
+
+  <nav class="nav-bottom">
+    <button class="active" onclick="location.href='index.html'">
+      <span>📊</span>
+      Inicio
+    </button>
+    <button onclick="location.href='registro.html'">
+      <span>➕</span>
+      Nuevo
+    </button>
+    <button onclick="location.href='clientes.html'">
+      <span>👥</span>
+      Clientes
+    </button>
+    <button onclick="location.href='historial.html'">
+      <span>📋</span>
+      Pagos
+    </button>
+    <button onclick="location.href='reportes.html'">
+      <span>📈</span>
+      Reportes
+    </button>
+  </nav>
+
+  <div class="confirmacion" id="confirmacion">
+    <div class="box">
+      <h1 id="tituloConfirmacion"></h1>
+      <p id="mensajeConfirmacion"></p>
+    </div>
+  </div>
+
+  <script src="js/config.js"></script>
+  <script src="js/supabase.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/clientes.js"></script>
+  <script src="js/prestamos.js"></script>
+  <script src="js/pagos.js"></script>
+  <script src="js/reportes.js"></script>
+
+  <script>
+    window.addEventListener("load", async () => {
+      const estadoConexion = document.getElementById("estadoConexion");
+      actualizarEstadoConexion(estadoConexion);
+      window.addEventListener("online", () => actualizarEstadoConexion(estadoConexion));
+      window.addEventListener("offline", () => actualizarEstadoConexion(estadoConexion));
+
+      if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
+      if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
+
+      await actualizarDashboard();
+      renderTablaPrestamos();
+      setupFiltros();
+
+      setInterval(actualizarDashboard, 30000);
+    });
+
+    function actualizarEstadoConexion(el) {
+      if (!el) return;
+      if (navigator.onLine) {
+        el.textContent = "Online";
+        el.className = "lector on";
+        return;
+      }
+      el.textContent = "Offline";
+      el.className = "lector off";
+    }
+
+    async function actualizarDashboard() {
+      const prestamos = obtenerPrestamos();
+      const clientes = obtenerClientes();
+      const pagos = obtenerPagos();
+
+      const activos = prestamos.filter(p => p.estado !== "pagado");
+      const hoy = new Date().toISOString().split("T")[0];
+      const atrasados = activos.filter(p => p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
+
+      const mesActual = new Date().getMonth();
+      const pagosDelMes = pagos.filter(p => {
+        const fechaPago = new Date(p.fecha_pago);
+        return fechaPago.getMonth() === mesActual && p.estado === "confirmado";
+      });
+
+      const totalAdeudo = activos.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
+
+      document.getElementById("dashPrestamosActivos").textContent = activos.length;
+      document.getElementById("dashClientes").textContent = clientes.length;
+      document.getElementById("dashPagosMes").textContent = pagosDelMes.length;
+      document.getElementById("dashAtrasados").textContent = atrasados.length;
+      document.getElementById("totalAdeudo").textContent = `$${formatearMoneda(totalAdeudo)}`;
+    }
+
+    function formatearMoneda(num) {
+      return Number(num || 0).toLocaleString("es-MX", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderTablaPrestamos() {
+      const tbody = document.getElementById("tablaPrestamos");
+      const filtroEstado = document.getElementById("filtroEstado").value;
+      const buscador = document.getElementById("buscador").value.toLowerCase();
+      const prestamos = obtenerPrestamos();
+      const clientes = obtenerClientes();
+      const hoy = new Date().toISOString().split("T")[0];
+
+      let filtered = prestamos;
+
+      if (filtroEstado === "activo") filtered = filtered.filter(p => p.estado === "activo");
+      else if (filtroEstado === "pagado") filtered = filtered.filter(p => p.estado === "pagado");
+      else if (filtroEstado === "atrasado") filtered = filtered.filter(p => p.estado !== "pagado" && p.fecha_proximo_pago && p.fecha_proximo_pago < hoy);
+
+      if (buscador) {
+        filtered = filtered.filter(p => {
+          const cliente = clientes.find(c => c.id === p.cliente_id);
+          const nombre = cliente?.nombre || "";
+          const matricula = cliente?.matricula || "";
+          return nombre.toLowerCase().includes(buscador) || matricula.toLowerCase().includes(buscador);
+        });
+      }
+
+      if (!filtered.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center">Sin préstamos registrados</td></tr>';
+        return;
+      }
+
+      tbody.innerHTML = filtered.map(p => {
+        const cliente = clientes.find(c => c.id === p.cliente_id) || {};
+        const nombre = cliente.nombre || "Sin nombre";
+        const matricula = cliente.matricula || "-";
+        const estadoClass = p.estado === "pagado" ? "badge-success" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "badge-danger" : "badge-warning");
+        const estadoText = p.estado === "pagado" ? "Pagado" : (p.fecha_proximo_pago && p.fecha_proximo_pago < hoy ? "Atrasado" : "Activo");
+
+        return `
+          <tr onclick="verDetallePrestamo('${p.id}')">
+            <td data-label="Cliente"><strong>${nombre}</strong><br><small style="color:var(--gray-500)">${matricula}</small></td>
+            <td data-label="Saldo">$${formatearMoneda(p.saldo_pendiente)}</td>
+            <td data-label="Pagos">${p.pagos_realizados || 0}/${p.total_pagos || 0}</td>
+            <td data-label="Estado"><span class="badge ${estadoClass}">${estadoText}</span></td>
+            <td data-label="">
+              <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html?prestamo=${p.id}'">Pago</button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+    }
+
+    function setupFiltros() {
+      document.getElementById("filtroEstado").addEventListener("change", renderTablaPrestamos);
+      document.getElementById("buscador").addEventListener("input", renderTablaPrestamos);
+    }
+
+    function verDetallePrestamo(id) {
+      const prestamo = obtenerPrestamos().find(p => p.id === id);
+      if (!prestamo) return;
+
+      const cliente = obtenerClientes().find(c => c.id === prestamo.cliente_id);
+      const pagos = obtenerPagos().filter(p => p.prestamo_id === id);
+
+      document.getElementById("tituloConfirmacion").textContent = cliente?.nombre || "Detalle";
+      document.getElementById("mensajeConfirmacion").innerHTML = `
+        <strong>Matrícula:</strong> ${cliente?.matricula || "N/A"}<br><br>
+        <strong>Monto total:</strong> $${formatearMoneda(prestamo.monto_total)}<br>
+        <strong>Saldo pendiente:</strong> $${formatearMoneda(prestamo.saldo_pendiente)}<br>
+        <strong>Pagos:</strong> ${pagos.length}/${prestamo.total_pagos || 0}<br><br>
+        <strong>Fecha inicio:</strong> ${prestamo.fecha_inicio}<br>
+        <strong>Próximo pago:</strong> ${prestamo.fecha_proximo_pago || "N/A"}
+      `;
+      document.getElementById("confirmacion").className = "confirmacion show";
+      setTimeout(() => { document.getElementById("confirmacion").style.display = "none"; }, 5000);
+    }
+
+    document.getElementById("confirmacion")?.addEventListener("click", function(e) {
+      if (e.target === this) this.style.display = "none";
+    });
+
+    window.addEventListener("storage", async () => {
+      renderTablaPrestamos();
+      await actualizarDashboard();
+    });
+  </script>
+</body>
+</html>
