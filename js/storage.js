@@ -128,3 +128,25 @@ async function syncPagosDesdeSupabase() {
   });
   safeSet(APP_CONFIG.storageKeys.pagos, merged);
 }
+
+function mostrarNotificacion(mensaje, tipo = "success") {
+  const existente = document.querySelector(".toast-notificacion");
+  if (existente) existente.remove();
+
+  const toast = document.createElement("div");
+  toast.className = `toast-notificacion toast-${tipo}`;
+  toast.innerHTML = `
+    <div class="toast-icono">${tipo === "success" ? "✓" : tipo === "error" ? "✗" : "ℹ"}</div>
+    <div class="toast-mensaje">${mensaje}</div>
+    <button class="toast-cerrar" onclick="this.parentElement.remove()">×</button>
+  `;
+  
+  document.body.appendChild(toast);
+  
+  setTimeout(() => toast.classList.add("mostrar"), 10);
+  
+  setTimeout(() => {
+    toast.classList.remove("mostrar");
+    setTimeout(() => toast.remove(), 300);
+  }, 4000);
+}

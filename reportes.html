@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="theme-color" content="#6366f1">
   <title>Reportes - Sistema de Préstamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>Reportes</h2>
+      <h2>📈 Reportes</h2>
       <p class="brand-sub">Estadísticas y exportaciones</p>
     </div>
     <div class="header-actions">
@@ -24,13 +24,13 @@
     <article class="reporte-card">
       <h3>📊 Resumen General</h3>
       <div id="resumenGeneral"></div>
-      <button class="btn-primary" onclick="descargarResumenGeneral()">Descargar CSV</button>
+      <button class="btn-primary" onclick="descargarResumenGeneral()">📥 Descargar CSV</button>
     </article>
 
     <article class="reporte-card">
       <h3>⚠️ Préstamos Atrasados</h3>
       <div id="prestamosAtrasados"></div>
-      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">Descargar Lista</button>
+      <button class="btn-primary" onclick="descargarPrestamosAtrasados()">📥 Descargar Lista</button>
     </article>
 
     <article class="reporte-card">
@@ -39,13 +39,13 @@
         <option value="todos">Todos los clientes</option>
       </select>
       <div id="estadoCuentaCliente"></div>
-      <button class="btn-primary" onclick="descargarEstadoCuenta()">Descargar</button>
+      <button class="btn-primary" onclick="descargarEstadoCuenta()">📥 Descargar</button>
     </article>
 
     <article class="reporte-card">
       <h3>📈 Flujo de Efectivo</h3>
       <div id="flujoEfectivo"></div>
-      <button class="btn-primary" onclick="descargarFlujoEfectivo()">Descargar CSV</button>
+      <button class="btn-primary" onclick="descargarFlujoEfectivo()">📥 Descargar CSV</button>
     </article>
   </main>
 
@@ -120,14 +120,14 @@
       const totalPendiente = activos.reduce((sum, p) => sum + (p.saldo_pendiente || 0), 0);
 
       document.getElementById("resumenGeneral").innerHTML = `
-        <div class="stat-row"><span>Total préstamos:</span><strong>${prestamos.length}</strong></div>
-        <div class="stat-row"><span>Activos:</span><strong>${activos.length}</strong></div>
-        <div class="stat-row"><span>Pagados:</span><strong>${pagados.length}</strong></div>
-        <div class="stat-row"><span>Atrasados:</span><strong class="text-danger">${atrasados.length}</strong></div>
-        <div class="stat-row"><span>Clientes:</span><strong>${clientes.length}</strong></div>
-        <div class="stat-row"><span>Total prestado:</span><strong>$${formatearMoneda(totalPrestado)}</strong></div>
-        <div class="stat-row"><span>Total cobrado:</span><strong class="text-success">$${formatearMoneda(totalCobrado)}</strong></div>
-        <div class="stat-row"><span>Total pendiente:</span><strong>$${formatearMoneda(totalPendiente)}</strong></div>
+        <div class="stat-row"><span>📊 Total préstamos:</span><strong>${prestamos.length}</strong></div>
+        <div class="stat-row"><span>🔄 Activos:</span><strong>${activos.length}</strong></div>
+        <div class="stat-row"><span>✓ Pagados:</span><strong>${pagados.length}</strong></div>
+        <div class="stat-row"><span>⚠️ Atrasados:</span><strong class="text-danger">${atrasados.length}</strong></div>
+        <div class="stat-row"><span>👥 Clientes:</span><strong>${clientes.length}</strong></div>
+        <div class="stat-row"><span>💵 Total prestado:</span><strong>$${formatearMoneda(totalPrestado)}</strong></div>
+        <div class="stat-row"><span>✅ Total cobrado:</span><strong class="text-success">$${formatearMoneda(totalCobrado)}</strong></div>
+        <div class="stat-row"><span>📊 Total pendiente:</span><strong>$${formatearMoneda(totalPendiente)}</strong></div>
       `;
     }
 
@@ -192,9 +192,9 @@
         ? filtered.map(r => `
             <div class="cliente-resumen">
               <strong>${r.cliente.nombre}</strong>
-              <div class="stat-row"><span>Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
-              <div class="stat-row"><span>Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
-              <div class="stat-row"><span>Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>
+              <div class="stat-row"><span>💵 Total:</span><strong>$${formatearMoneda(r.totalPrestado)}</strong></div>
+              <div class="stat-row"><span>✅ Pagado:</span><strong class="text-success">$${formatearMoneda(r.totalPagado)}</strong></div>
+              <div class="stat-row"><span>📊 Saldo:</span><strong>$${formatearMoneda(r.saldoPendiente)}</strong></div>
             </div>
           `).join("")
         : "<p>Sin datos</p>";
@@ -223,18 +223,22 @@
 
     async function descargarResumenGeneral() {
       if (typeof generarReporteResumenGeneralCsv === "function") await generarReporteResumenGeneralCsv();
+      mostrarNotificacion("Reporte descargado", "success");
     }
 
     async function descargarEstadoCuenta() {
       if (typeof generarReporteEstadoCuentaCsv === "function") await generarReporteEstadoCuentaCsv();
+      mostrarNotificacion("Estado de cuenta descargado", "success");
     }
 
     async function descargarPrestamosAtrasados() {
       if (typeof generarReporteAtrasadosCsv === "function") await generarReporteAtrasadosCsv();
+      mostrarNotificacion("Lista descargada", "success");
     }
 
     async function descargarFlujoEfectivo() {
       if (typeof generarReporteFlujoEfectivoCsv === "function") await generarReporteFlujoEfectivoCsv();
+      mostrarNotificacion("Flujo de efectivo descargado", "success");
     }
   </script>
 </body>

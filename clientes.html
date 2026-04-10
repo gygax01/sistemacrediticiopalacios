@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="theme-color" content="#3b82f6">
+  <meta name="theme-color" content="#6366f1">
   <title>Clientes - Sistema de Préstamos</title>
   <link rel="stylesheet" href="css/styles.css">
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -12,7 +12,7 @@
 <body>
   <header class="header-brand">
     <div class="brand">
-      <h2>Clientes</h2>
+      <h2>👥 Clientes</h2>
       <p class="brand-sub">Gestión de clientes</p>
     </div>
     <div class="header-actions">
@@ -21,7 +21,7 @@
   </header>
 
   <div class="filtros">
-    <input type="text" id="buscador" placeholder="Buscar por nombre o matrícula...">
+    <input type="text" id="buscador" placeholder="🔍 Buscar por nombre o matrícula...">
     <select id="filtroEstado">
       <option value="todos">Todos</option>
       <option value="con_prestamo">Con préstamo</option>
@@ -33,9 +33,9 @@
     <table>
       <thead>
         <tr>
-          <th>Cliente</th>
-          <th>Préstamos</th>
-          <th>Adeudo</th>
+          <th>👤 Cliente</th>
+          <th>📊 Préstamos</th>
+          <th>💵 Adeudo</th>
           <th></th>
         </tr>
       </thead>
@@ -68,10 +68,10 @@
 
   <div class="modal" id="modalCliente">
     <div class="modal-content">
-      <span class="close" onclick="cerrarModal()">&times;</span>
-      <h3>Datos del Cliente</h3>
+      <button class="close" onclick="cerrarModal()">×</button>
+      <h3>📋 Datos del Cliente</h3>
       <div id="detalleCliente"></div>
-      <h4>Historial de Préstamos</h4>
+      <h4>📜 Historial de Préstamos</h4>
       <div id="historialPrestamosCliente"></div>
     </div>
   </div>
@@ -86,6 +86,7 @@
     window.addEventListener("load", async () => {
       if (typeof ensureClientesCargados === "function") await ensureClientesCargados();
       if (typeof ensurePrestamosCargados === "function") await ensurePrestamosCargados();
+      if (typeof ensurePagosCargados === "function") await ensurePagosCargados();
       renderTablaClientes();
       setupFiltros();
     });
@@ -133,7 +134,7 @@
               <strong>${c.nombre}</strong><br>
               <small style="color:var(--gray-500)">${c.matricula || "-"} | ${c.telefono || "-"}</small>
             </td>
-            <td data-label="Préstamos">${prestamosCliente.length}</td>
+            <td data-label="Préstamos"><strong>${prestamosCliente.length}</strong></td>
             <td data-label="Adeudo">$${formatearMoneda(totalAdeudo)}</td>
             <td data-label="">
               <button class="btn-sm btn-success" onclick="event.stopPropagation(); location.href='registro.html'">+ Préstamo</button>
@@ -155,29 +156,29 @@
       if (!cliente) return;
 
       document.getElementById("detalleCliente").innerHTML = `
-        <p><strong>Nombre:</strong> ${cliente.nombre}</p>
-        <p><strong>Matrícula:</strong> ${cliente.matricula || "N/A"}</p>
-        <p><strong>Teléfono:</strong> ${cliente.telefono || "N/A"}</p>
-        <p><strong>Email:</strong> ${cliente.email || "N/A"}</p>
-        <p><strong>Dirección:</strong> ${cliente.direccion || "N/A"}</p>
-        <p><strong>Notas:</strong> ${cliente.notas || "N/A"}</p>
-        <p><strong>Registrado:</strong> ${new Date(cliente.created_at).toLocaleDateString("es-MX")}</p>
+        <p><strong>👤 Nombre:</strong> ${cliente.nombre}</p>
+        <p><strong>📋 Matrícula:</strong> ${cliente.matricula || "N/A"}</p>
+        <p><strong>📞 Teléfono:</strong> ${cliente.telefono || "N/A"}</p>
+        <p><strong>📧 Email:</strong> ${cliente.email || "N/A"}</p>
+        <p><strong>🏠 Dirección:</strong> ${cliente.direccion || "N/A"}</p>
+        <p><strong>📝 Notas:</strong> ${cliente.notas || "N/A"}</p>
+        <p><strong>📅 Registrado:</strong> ${new Date(cliente.created_at).toLocaleDateString("es-MX")}</p>
       `;
 
       document.getElementById("historialPrestamosCliente").innerHTML = prestamos.length
         ? prestamos.map(p => `
             <div class="historial-item">
-              <p><strong>Monto:</strong> $${formatearMoneda(p.monto_total)} | <strong>Saldo:</strong> $${formatearMoneda(p.saldo_pendiente)}</p>
-              <p><strong>Estado:</strong> ${p.estado} | <strong>Pagos:</strong> ${p.pagos_realizados}/${p.total_pagos}</p>
+              <p><strong>💵 Monto:</strong> $${formatearMoneda(p.monto_total)} | <strong>Saldo:</strong> $${formatearMoneda(p.saldo_pendiente)}</p>
+              <p><strong>🏷️ Estado:</strong> ${p.estado} | <strong>Pagos:</strong> ${p.pagos_realizados}/${p.total_pagos}</p>
             </div>
           `).join("")
-        : "<p>Sin préstamos registrados</p>";
+        : "<p class='text-success'>Sin préstamos registrados ✓</p>";
 
-      document.getElementById("modalCliente").style.display = "flex";
+      document.getElementById("modalCliente").className = "modal show";
     }
 
     function cerrarModal() {
-      document.getElementById("modalCliente").style.display = "none";
+      document.getElementById("modalCliente").className = "modal";
     }
 
     window.onclick = function(e) {
