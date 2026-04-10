@@ -38,7 +38,7 @@
 
     <section id="nuevo-cliente" class="tab-content active">
       <h3>Datos del Cliente</h3>
-      <form id="formCliente" onsubmit="guardarCliente(event)">
+      <form id="formCliente" onsubmit="guardarClienteForm(event)">
         <div class="form-grid">
           <div class="form-group">
             <label for="nombre">Nombre completo *</label>
@@ -182,14 +182,19 @@
     let clientes = [];
     let prestamos = [];
 
-    window.addEventListener("load", async () => {
+window.addEventListener("load", async () => {
+      console.log("[DEBUG] pagina cargada");
       clientes = await obtenerClientes();
       prestamos = await obtenerPrestamos();
+      console.log("[DEBUG] clientes:", clientes.length, "prestamos:", prestamos.length);
 
       poblarSelectClientes();
       poblarSelectPrestamos();
       establecerFechaActual();
-      calcularMontoPago();
+      
+      if (document.getElementById("monto")) {
+        calcularMontoPago();
+      }
 
       const params = new URLSearchParams(window.location.search);
       const prestamoId = params.get("prestamo");
@@ -264,11 +269,19 @@
       return fecha.toISOString().split("T")[0];
     }
 
-    async function guardarCliente(e) {
+    async function guardarClienteForm(e) {
       e.preventDefault();
+      console.log("[DEBUG] guardarClienteForm llamado");
+      
+      const nombre = document.getElementById("nombre").value.trim();
+      if (!nombre) {
+        mostrarNotificacion("Ingrese el nombre del cliente", "error");
+        return;
+      }
+      
       const cliente = {
         id: crypto.randomUUID(),
-        nombre: document.getElementById("nombre").value.trim(),
+        nombre: nombre,
         matricula: document.getElementById("matricula").value.trim(),
         telefono: document.getElementById("telefono").value.trim(),
         email: document.getElementById("email").value.trim(),
@@ -277,7 +290,10 @@
         created_at: new Date().toISOString()
       };
 
+      console.log("[DEBUG] guardando cliente...", cliente);
       const result = await guardarCliente(cliente);
+      console.log("[DEBUG] resultado:", result);
+      
       if (result) {
         clientes = await obtenerClientes();
         e.target.reset();
